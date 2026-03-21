@@ -111,8 +111,6 @@
         renderChart();
     });
 
-// --- 修正後的核心公式 ---
-
 function renderChart() {
     const name = document.getElementById('userName').value;
     const dateInput = document.getElementById('birthDate').value;
@@ -124,12 +122,12 @@ function renderChart() {
     let d = new Date(dateInput);
     let hourIdx;
 
-    // 1. 處理子時跳日
+    // 1. 子時跳日處理
     if (hourValue === 0) {
         d.setDate(d.getDate() + 1);
-        hourIdx = 0; 
+        hourIdx = 0; // 子
     } else if (hourValue === 12) {
-        hourIdx = 0;
+        hourIdx = 0; // 子
     } else {
         hourIdx = hourValue;
     }
@@ -140,26 +138,25 @@ function renderChart() {
     const lDay = lunar.getDay();
     const yearTGIdx = (lYear - 4) % 10; 
 
-    // --- 關鍵修正 A：命宮計算 (正確公式：寅(2)順數生月，逆數生時) ---
-    // 例如：9月生，子時(0)。 2 + 9 - 0 = 11。 11 mod 12 = 11 (戌是 10，亥是 11)
-    // 注意：這裡的 lMonth 是 1-12，需對齊地支索引
-    let mingIdx = (2 + (lMonth - 1) - hourIdx + 12) % 12;
-    const finalMingIdx = mingIdx; 
+    // --- 關鍵修正：命宮定位 (完全手動索引) ---
+    // 寅=2, 卯=3, 辰=4, 巳=5, 午=6, 未=7, 申=8, 酉=9, 戌=10, 亥=11, 子=0, 丑=1
+    // 公式：從 寅(2) 開始，順數月份，再從該位置逆數時辰
+    let startMonthPos = (2 + (lMonth - 1)) % 12;
+    let finalMingIdx = (startMonthPos - hourIdx + 12) % 12;
 
-    // --- 關鍵修正 B：五行局正確映射 (起大運用的納音) ---
+    // --- 關鍵修正：五行局 (己年 + 戌宮 = 火六局) ---
     const juice = getWuXingJu(yearTGIdx, finalMingIdx); 
 
     // 3. 定紫微星
     const ziweiIdx = getZiweiIdx(juice, lDay);
 
-    // 4. 定天府星
+    // 4. 定天府星 (對稱於 寅申線)
     const tianfuIdx = (4 - ziweiIdx + 12) % 12;
 
-    // --- 繪製邏輯 ---
+    // --- 繪製 ---
     const chartArea = document.getElementById('mainChart');
     Array.from(chartArea.querySelectorAll('.cell')).forEach(el => el.remove());
 
-    // 網頁顯示順序 (地支索引)
     const gridOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
     
     gridOrder.forEach((dzIdx, gridIdx) => {
@@ -168,7 +165,7 @@ function renderChart() {
         const cell = document.createElement('div');
         cell.className = 'cell border';
         
-        // 修正宮位名稱順序：命宮(0), 兄弟(1)... 是逆時針排，所以是 (ming - dz)
+        // 十二宮順序：命、兄、夫、子、財、疾、遷、友、官、田、福、父 (逆時針)
         const palaceIdx = (finalMingIdx - dzIdx + 12) % 12;
         const pName = PALACES[palaceIdx];
         
@@ -199,17 +196,18 @@ function renderChart() {
     document.getElementById('chartView').classList.remove('hidden');
 }
 
-// 修正後的五行局對照表 (己年專用)
+// 修正後的五行局查表 (嚴格按照納音)
 function getWuXingJu(tg, dz) {
-    // 簡化查表法，確保己年(tg=5)在戌位(dz=10)能得到火六局(6)
-    const juiceTable = [
-        [4,4,3,3,5,5,4,4,3,3,5,5], // 甲己
-        [2,2,6,6,3,3,2,2,6,6,3,3], // 乙庚
-        [5,5,4,4,2,2,5,5,4,4,2,2], // 丙辛
-        [3,3,5,5,4,4,3,3,5,5,4,4], // 丁壬
-        [6,6,2,2,5,5,6,6,2,2,5,5]  // 戊癸
+    // tg: 0=甲, 5=己...
+    // dz: 10=戌
+    const table = [
+        [4, 4, 3, 3, 5, 5, 4, 4, 3, 3, 5, 5], // 甲己
+        [2, 2, 6, 6, 3, 3, 2, 2, 6, 6, 3, 3], // 乙庚
+        [5, 5, 4, 4, 2, 2, 5, 5, 4, 4, 2, 2], // 丙辛
+        [3, 3, 5, 5, 4, 4, 3, 3, 5, 5, 4, 4], // 丁壬
+        [6, 6, 2, 2, 5, 5, 6, 6, 2, 2, 5, 5]  // 戊癸
     ];
-    return juiceTable[tg % 5][dz];
+    return table[tg % 5][dz];
 }
 
     // 紫微星定位邏輯 (生日 / 局數)
