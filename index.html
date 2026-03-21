@@ -135,7 +135,6 @@ function renderChart() {
     // 接下來使用調整後的 d (日期) 與 hourIdx (地支) 進行排盤...
     // 這樣 1989/10/01 23:30 就會被當作 10/02 的子時來排
     // 您的命宮就會正確出現在「戌」，且主星為「天機、天梁」
-}
         let lunar = isSolar ? 
             Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()) : 
             Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
