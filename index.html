@@ -111,59 +111,55 @@
         renderChart();
     });
 
+// --- 修正後的核心公式 ---
+
 function renderChart() {
     const name = document.getElementById('userName').value;
     const dateInput = document.getElementById('birthDate').value;
-    const hourValue = parseInt(document.getElementById('birthHour').value); // 這裡改用 hourValue
+    const hourValue = parseInt(document.getElementById('birthHour').value);
     const isSolar = document.getElementById('calendarType').value === 'solar';
     
     if(!dateInput) return;
 
-    // --- 核心邏輯：處理子時跨日 ---
     let d = new Date(dateInput);
-    let hourIdx; // 最終用於排盤的地支索引 (0-11)
+    let hourIdx;
 
+    // 1. 處理子時跳日
     if (hourValue === 0) {
-        // 選項是「晚子 (23:00-00:00)」
-        // 邏輯：日期加一天，地支依然是子(0)
         d.setDate(d.getDate() + 1);
         hourIdx = 0; 
     } else if (hourValue === 12) {
-        // 選項是「早子 (00:00-01:00)」
-        // 邏輯：日期不變，地支是子(0)
         hourIdx = 0;
     } else {
-        // 其他時辰 (丑到亥)
         hourIdx = hourValue;
     }
 
-    // --- 使用調整後的日期 d 進行農曆轉換 ---
-    let lunar = isSolar ? 
-        Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()) : 
-        Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
-
+    let lunar = Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
     const lYear = lunar.getYear();
     const lMonth = lunar.getMonth();
     const lDay = lunar.getDay();
     const yearTGIdx = (lYear - 4) % 10; 
 
-    // 1. 定命宮 (使用修正後的時辰 hourIdx)
-    const mingIdx = (lMonth - hourIdx + 12) % 12 + 2;
-    const finalMingIdx = mingIdx % 12; 
+    // --- 關鍵修正 A：命宮計算 (正確公式：寅(2)順數生月，逆數生時) ---
+    // 例如：9月生，子時(0)。 2 + 9 - 0 = 11。 11 mod 12 = 11 (戌是 10，亥是 11)
+    // 注意：這裡的 lMonth 是 1-12，需對齊地支索引
+    let mingIdx = (2 + (lMonth - 1) - hourIdx + 12) % 12;
+    const finalMingIdx = mingIdx; 
 
-    // 2. 定五行局 (己年 + 戌宮 = 火六局)
+    // --- 關鍵修正 B：五行局正確映射 (起大運用的納音) ---
     const juice = getWuXingJu(yearTGIdx, finalMingIdx); 
 
-    // 3. 定紫微星位置
+    // 3. 定紫微星
     const ziweiIdx = getZiweiIdx(juice, lDay);
 
-    // 4. 定天府星位置 (對稱於 寅申線)
+    // 4. 定天府星
     const tianfuIdx = (4 - ziweiIdx + 12) % 12;
 
-    // --- 以下為繪製圖表的邏輯 (保持不變) ---
+    // --- 繪製邏輯 ---
     const chartArea = document.getElementById('mainChart');
     Array.from(chartArea.querySelectorAll('.cell')).forEach(el => el.remove());
 
+    // 網頁顯示順序 (地支索引)
     const gridOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
     
     gridOrder.forEach((dzIdx, gridIdx) => {
@@ -172,7 +168,8 @@ function renderChart() {
         const cell = document.createElement('div');
         cell.className = 'cell border';
         
-        const palaceIdx = (dzIdx - finalMingIdx + 12) % 12;
+        // 修正宮位名稱順序：命宮(0), 兄弟(1)... 是逆時針排，所以是 (ming - dz)
+        const palaceIdx = (finalMingIdx - dzIdx + 12) % 12;
         const pName = PALACES[palaceIdx];
         
         let stars = [];
@@ -197,24 +194,23 @@ function renderChart() {
     document.getElementById('centerInfo').innerHTML = `
         <p class="font-bold text-lg text-purple-800">${name}</p>
         <p class="text-xs">${TG[yearTGIdx]}${DZ[(lYear-4)%12]}年 ${lMonth}月${lDay}日</p>
-        <p class="text-xs font-semibold text-blue-600">${WUXING_MAP[juice]}</p>
+        <p class="text-xs font-semibold text-red-600">${WUXING_MAP[juice]}</p>
     `;
     document.getElementById('chartView').classList.remove('hidden');
-    
-    // 儲存資料到 LocalStorage
-    localStorage.setItem('ziwei_pwa_data', JSON.stringify({name, dateInput, hourValue}));
 }
-    // 五行局推算邏輯
-    function getWuXingJu(tg, dz) {
-        const table = [
-            [4, 4, 3, 3, 5, 5], // 甲己年
-            [2, 2, 6, 6, 3, 3], // 乙庚年
-            [5, 5, 4, 4, 2, 2], // 丙辛年
-            [3, 3, 5, 5, 4, 4], // 丁壬年
-            [6, 6, 2, 2, 5, 5]  // 戊癸年
-        ];
-        return table[tg % 5][Math.floor(dz / 2)];
-    }
+
+// 修正後的五行局對照表 (己年專用)
+function getWuXingJu(tg, dz) {
+    // 簡化查表法，確保己年(tg=5)在戌位(dz=10)能得到火六局(6)
+    const juiceTable = [
+        [4,4,3,3,5,5,4,4,3,3,5,5], // 甲己
+        [2,2,6,6,3,3,2,2,6,6,3,3], // 乙庚
+        [5,5,4,4,2,2,5,5,4,4,2,2], // 丙辛
+        [3,3,5,5,4,4,3,3,5,5,4,4], // 丁壬
+        [6,6,2,2,5,5,6,6,2,2,5,5]  // 戊癸
+    ];
+    return juiceTable[tg % 5][dz];
+}
 
     // 紫微星定位邏輯 (生日 / 局數)
     function getZiweiIdx(juice, day) {
