@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微排盤 v1.0.9</title>
+    <title>紫微專業版 v1.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap');
         body { background-color: #f8fafc; font-family: sans-serif; }
@@ -15,8 +16,8 @@
         .center-box { grid-column: 2 / 4; grid-row: 2 / 4; background: #f1f5f9; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; text-align: center; }
         .main-star { writing-mode: vertical-rl; color: #be123c; font-weight: bold; font-size: 0.85rem; line-height: 1; margin-left: 1px; }
         .small-star { writing-mode: vertical-rl; font-size: 0.65rem; line-height: 1; margin-left: 1px; }
-        .lucky { color: #15803d; } /* 吉星綠色 */
-        .bad { color: #64748b; }   /* 煞星灰色 */
+        .lucky { color: #15803d; }
+        .bad { color: #64748b; }
         .si-hua { color: #ea580c; font-size: 0.55rem; border: 1px solid #ea580c; border-radius: 2px; padding: 0 1px; margin-top: 2px; }
         .palace-tag { font-size: 0.65rem; color: white; padding: 2px 4px; border-radius: 2px; align-self: flex-end; }
         .dz-text { font-size: 0.6rem; color: #94a3b8; position: absolute; bottom: 2px; left: 4px; }
@@ -25,7 +26,7 @@
 <body class="p-2 sm:p-6">
 
     <div class="max-w-md mx-auto bg-white shadow-2xl rounded-3xl p-6 mb-6 border-t-8 border-purple-600">
-        <h1 class="text-2xl font-bold text-center text-slate-800 ziwei-font mb-4">紫微斗數專業版</h1>
+        <h1 class="text-2xl font-bold text-center text-slate-800 ziwei-font mb-4">紫微斗數 PWA <span class="text-xs font-mono text-gray-400">v1.1.0</span></h1>
         
         <form id="ziweiForm" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
@@ -35,16 +36,19 @@
             <div class="grid grid-cols-2 gap-3">
                 <input type="date" id="birthDate" required class="border-b-2 p-2 outline-none">
                 <select id="birthHour" class="border-b-2 p-2 outline-none">
-                    <option value="late-zi">晚子 (23:00-00:00)</option>
+                    <option value="late-zi">晚子 (23:00-00:00) 算隔日</option>
                     <option value="0">早子 (00:00-01:00)</option><option value="1">丑</option><option value="2">寅</option>
                     <option value="3">卯</option><option value="4">辰</option><option value="5">巳</option>
                     <option value="6">午</option><option value="7">未</option><option value="8">申</option>
                     <option value="9">酉</option><option value="10">戌</option><option value="11">亥</option>
                 </select>
             </div>
-            <div class="flex gap-2">
-                <button type="submit" class="flex-1 bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">排盤</button>
-                <button type="button" onclick="saveToFriendList()" class="bg-emerald-600 text-white px-4 rounded-xl shadow-lg active:scale-95">儲存</button>
+            <div class="flex flex-col gap-2">
+                <button type="submit" class="w-full bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95">立即排盤</button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="saveToFriendList()" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm">儲存好友</button>
+                    <button type="button" onclick="forceReload()" class="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg text-sm italic">強制更新</button>
+                </div>
             </div>
         </form>
 
@@ -54,9 +58,14 @@
         </div>
     </div>
 
-    <div id="chartView" class="hidden">
-        <div class="chart-grid" id="mainChart">
-            <div class="center-box" id="centerInfo"></div>
+    <div id="chartView" class="hidden text-center pb-10">
+        <div id="captureArea" class="inline-block p-2 bg-slate-800 rounded-lg shadow-2xl">
+            <div class="chart-grid" id="mainChart">
+                <div class="center-box" id="centerInfo"></div>
+            </div>
+        </div>
+        <div class="mt-4 flex justify-center gap-2">
+            <button onclick="exportImage()" class="bg-blue-600 text-white px-6 py-2 rounded-full shadow-lg font-bold active:scale-95">下載命盤圖片</button>
         </div>
     </div>
 
@@ -68,6 +77,11 @@
 
         window.onload = updateFriendListDisplay;
 
+        function forceReload() {
+            localStorage.clear();
+            window.location.reload(true);
+        }
+
         function saveToFriendList() {
             const name = document.getElementById('userName').value;
             if(!name) return alert("請輸入姓名");
@@ -77,6 +91,7 @@
             list.push(data);
             localStorage.setItem('ziwei_friends', JSON.stringify(list));
             updateFriendListDisplay();
+            alert(`已儲存 ${name} 到好友名單`);
         }
 
         function updateFriendListDisplay() {
@@ -85,8 +100,8 @@
             const section = document.getElementById('friendListSection');
             if(list.length === 0) return section.classList.add('hidden');
             section.classList.remove('hidden');
-            container.innerHTML = list.map(friend => `
-                <button onclick='loadFriend(${JSON.stringify(friend)})' class="px-3 py-1 bg-slate-100 text-slate-600 text-xs rounded-full hover:bg-purple-100 transition-colors border border-slate-200">${friend.name}</button>
+            container.innerHTML = list.map(f => `
+                <button onclick='loadFriend(${JSON.stringify(f)})' class="px-3 py-1 bg-slate-100 text-slate-600 text-xs rounded-full border border-slate-200">${f.name}</button>
             `).join('');
         }
 
@@ -95,7 +110,7 @@
             document.getElementById('gender').value = f.gender;
             document.getElementById('birthDate').value = f.date;
             document.getElementById('birthHour').value = f.hour;
-            alert(`已載入 ${f.name} 的資料，請點擊「排盤」`);
+            render();
         }
 
         document.getElementById('ziweiForm').addEventListener('submit', (e) => { e.preventDefault(); render(); });
@@ -109,7 +124,7 @@
             
             let lunar = Solar.fromDate(d).getLunar();
             let lMonth = lunar.getMonth(), lDay = lunar.getDay();
-            let yTG = lunar.getYearGan(), yDZ = lunar.getYearZhi();
+            let yTG = lunar.getYearGan();
             let yTGIdx = (lunar.getYear() - 4) % 10;
 
             let mPos = (2 + (lMonth - 1) - hIdx + 12) % 12;
@@ -118,12 +133,12 @@
             let zPos = calcZiwei(juice, lDay), fPos = (4 - zPos + 12) % 12;
 
             let stars = Array.from({length:12}, () => []);
-            // 主星
+            // 安主星
             ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=>{ if(s) stars[(zPos-i+12)%12].push({n:s, t:'main'}); });
             ["天府","太陰","貪狼","巨門","天相","天梁","七殺"].forEach((s,i)=>{ stars[(fPos-i+12)%12].push({n:s, t:'main'}); });
             stars[(fPos+9)%12].push({n:"破軍", t:'main'});
 
-            // 六吉星
+            // 安吉星
             stars[(10+hIdx)%12].push({n:"文曲", t:'lucky'});
             stars[(10-hIdx+12)%12].push({n:"文昌", t:'lucky'});
             stars[(2+(lMonth-1))%12].push({n:"左輔", t:'lucky'});
@@ -131,18 +146,17 @@
             const kuiYue = {'甲':[7,9],'乙':[8,10],'丙':[11,1],'丁':[11,1],'戊':[7,9],'己':[8,10],'庚':[7,9],'辛':[6,2],'壬':[3,5],'癸':[3,5]};
             kuiYue[yTG].forEach((p,i)=>stars[p].push({n:i===0?"天魁":"天鉞", t:'lucky'}));
 
-            // 六煞星
+            // 安煞星
             const yangTuo = {'甲':4,'乙':5,'丙':7,'丁':8,'戊':7,'己':8,'庚':10,'辛':11,'壬':1,'癸':2};
             stars[yangTuo[yTG]].push({n:"擎羊", t:'bad'});
             stars[(yangTuo[yTG]-2+12)%12].push({n:"陀羅", t:'bad'});
             stars[(hIdx+10)%12].push({n:"地劫", t:'bad'});
             stars[(10-hIdx+12)%12].push({n:"地空", t:'bad'});
             
-            // 四化星標註
-            const sihuanames = ["祿","權","科","忌"];
+            // 安四化
             SIHUA_TABLE[yTG].forEach((short, i) => {
                 let full = STAR_MAP[short];
-                stars.forEach(palace => palace.forEach(s => { if(s.n === full) s.sh = sihuanames[i]; }));
+                stars.forEach(p => p.forEach(s => { if(s.n === full) s.sh = ["祿","權","科","忌"][i]; }));
             });
 
             const area = document.getElementById('mainChart');
@@ -168,9 +182,20 @@
 
             document.getElementById('centerInfo').innerHTML = `<p class="font-bold text-lg">${name}</p><p class="text-[10px] text-gray-500">${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日</p><div class="text-red-600 text-xs font-bold mt-2">${["","","水二","木三","金四","土五","火六"][juice]}局</div>`;
             document.getElementById('chartView').classList.remove('hidden');
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
         function calcZiwei(j, d) { let q = Math.ceil(d/j), r = d%j, s = (q+1)%12; return (r===0) ? (s+1)%12 : (r%2===0) ? (s+r)%12 : (s-r+12)%12; }
+
+        function exportImage() {
+            const area = document.getElementById('captureArea');
+            html2canvas(area).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${document.getElementById('userName').value}_命盤.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
     </script>
 </body>
 </html>
