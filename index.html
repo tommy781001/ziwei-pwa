@@ -113,97 +113,97 @@
 
 function renderChart() {
     const name = document.getElementById('userName').value;
-    let dateStr = document.getElementById('birthDate').value;
-    let hourValue = parseInt(document.getElementById('birthHour').value);
+    const dateInput = document.getElementById('birthDate').value;
+    const hourValue = parseInt(document.getElementById('birthHour').value); // 這裡改用 hourValue
     const isSolar = document.getElementById('calendarType').value === 'solar';
     
-    let d = new Date(dateStr);
-    let hourIdx;
+    if(!dateInput) return;
 
-    // --- 子時特殊處理 ---
+    // --- 核心邏輯：處理子時跨日 ---
+    let d = new Date(dateInput);
+    let hourIdx; // 最終用於排盤的地支索引 (0-11)
+
     if (hourValue === 0) {
-        // 晚子時：日期加一天，地支用子(0)
+        // 選項是「晚子 (23:00-00:00)」
+        // 邏輯：日期加一天，地支依然是子(0)
         d.setDate(d.getDate() + 1);
         hourIdx = 0; 
     } else if (hourValue === 12) {
-        // 早子時：日期不變，地支用子(0)
+        // 選項是「早子 (00:00-01:00)」
+        // 邏輯：日期不變，地支是子(0)
         hourIdx = 0;
     } else {
+        // 其他時辰 (丑到亥)
         hourIdx = hourValue;
     }
 
-    // 接下來使用調整後的 d (日期) 與 hourIdx (地支) 進行排盤...
-    // 這樣 1989/10/01 23:30 就會被當作 10/02 的子時來排
-    // 您的命宮就會正確出現在「戌」，且主星為「天機、天梁」
-        let lunar = isSolar ? 
-            Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()) : 
-            Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    // --- 使用調整後的日期 d 進行農曆轉換 ---
+    let lunar = isSolar ? 
+        Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()) : 
+        Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
 
-            const lYear = lunar.getYear();
-            const lMonth = lunar.getMonth();
-            const lDay = lunar.getDay();
-            const yearTGIdx = (lYear - 4) % 10; // 己年為 5
+    const lYear = lunar.getYear();
+    const lMonth = lunar.getMonth();
+    const lDay = lunar.getDay();
+    const yearTGIdx = (lYear - 4) % 10; 
 
-        // 1. 定命宮 (九月生、子時)
-        // 公式：月(9) - 時(0) = 9，從寅(2)起算順數 9 格 = 戌(10)
-        const mingIdx = (lMonth - hourIdx + 12) % 12 + 2;
-        const finalMingIdx = mingIdx % 12; // 這裡會得到 10 (戌)
+    // 1. 定命宮 (使用修正後的時辰 hourIdx)
+    const mingIdx = (lMonth - hourIdx + 12) % 12 + 2;
+    const finalMingIdx = mingIdx % 12; 
 
-        // 2. 定五行局 (己年 + 戌宮 = 火六局)
-        const juice = getWuXingJu(yearTGIdx, finalMingIdx); 
+    // 2. 定五行局 (己年 + 戌宮 = 火六局)
+    const juice = getWuXingJu(yearTGIdx, finalMingIdx); 
 
-        // 3. 定紫微星 (火六局、初三生 -> 紫微在未)
-        const ziweiIdx = getZiweiIdx(juice, lDay);
+    // 3. 定紫微星位置
+    const ziweiIdx = getZiweiIdx(juice, lDay);
 
-        // 4. 定天府星位置 (與紫微星對稱於 寅申線)
-        const tianfuIdx = (4 - ziweiIdx + 12) % 12;
+    // 4. 定天府星位置 (對稱於 寅申線)
+    const tianfuIdx = (4 - ziweiIdx + 12) % 12;
 
-        // 繪製佈局
-        const chartArea = document.getElementById('mainChart');
-        Array.from(chartArea.querySelectorAll('.cell')).forEach(el => el.remove());
+    // --- 以下為繪製圖表的邏輯 (保持不變) ---
+    const chartArea = document.getElementById('mainChart');
+    Array.from(chartArea.querySelectorAll('.cell')).forEach(el => el.remove());
 
-        const gridOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
+    const gridOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
+    
+    gridOrder.forEach((dzIdx, gridIdx) => {
+        if(dzIdx === -1) return;
+
+        const cell = document.createElement('div');
+        cell.className = 'cell border';
         
-        gridOrder.forEach((dzIdx, gridIdx) => {
-            if(dzIdx === -1) return;
-
-            const cell = document.createElement('div');
-            cell.className = 'cell border';
-            
-            const palaceIdx = (dzIdx - finalMingIdx + 12) % 12;
-            const pName = PALACES[palaceIdx];
-            
-            // 計算該宮位有哪些主星
-            let stars = [];
-            // 紫微系
-            ZIWEI_GROUP.forEach((s, i) => {
-                if (s && (ziweiIdx - i + 12) % 12 === dzIdx) stars.push(s);
-            });
-            // 天府系
-            TIANFU_GROUP.forEach((s, i) => {
-                if (s && (tianfuIdx + i) % 12 === dzIdx) stars.push(s);
-            });
-
-            cell.innerHTML = `
-                <div class="flex flex-row-reverse h-full space-x-reverse space-x-1">
-                    ${stars.map(s => `<div class="main-star text-[11px] leading-tight">${s}</div>`).join('')}
-                </div>
-                <span class="dz-label">${DZ[dzIdx]}</span>
-                <span class="palace-name ${pName==='命宮'?'bg-red-600':''}">${pName}</span>
-            `;
-            
-            chartArea.insertBefore(cell, chartArea.children[gridIdx]);
+        const palaceIdx = (dzIdx - finalMingIdx + 12) % 12;
+        const pName = PALACES[palaceIdx];
+        
+        let stars = [];
+        ZIWEI_GROUP.forEach((s, i) => {
+            if (s && (ziweiIdx - i + 12) % 12 === dzIdx) stars.push(s);
+        });
+        TIANFU_GROUP.forEach((s, i) => {
+            if (s && (tianfuIdx + i) % 12 === dzIdx) stars.push(s);
         });
 
-        document.getElementById('centerInfo').innerHTML = `
-            <p class="font-bold text-lg text-purple-800">${name}</p>
-            <p class="text-xs">${TG[yearTGIdx]}${DZ[(lYear-4)%12]}年 ${lMonth}月${lDay}日</p>
-            <p class="text-xs font-semibold text-blue-600">${WUXING_MAP[juice]}</p>
+        cell.innerHTML = `
+            <div class="flex flex-row-reverse h-full space-x-reverse space-x-1">
+                ${stars.map(s => `<div class="main-star text-[11px] leading-tight">${s}</div>`).join('')}
+            </div>
+            <span class="dz-label">${DZ[dzIdx]}</span>
+            <span class="palace-name ${pName==='命宮'?'bg-red-600':''}">${pName}</span>
         `;
-        document.getElementById('chartView').classList.remove('hidden');
-        localStorage.setItem('ziwei_pwa_data', JSON.stringify({name, dateStr, hourIdx}));
-    }
+        
+        chartArea.insertBefore(cell, chartArea.children[gridIdx]);
+    });
 
+    document.getElementById('centerInfo').innerHTML = `
+        <p class="font-bold text-lg text-purple-800">${name}</p>
+        <p class="text-xs">${TG[yearTGIdx]}${DZ[(lYear-4)%12]}年 ${lMonth}月${lDay}日</p>
+        <p class="text-xs font-semibold text-blue-600">${WUXING_MAP[juice]}</p>
+    `;
+    document.getElementById('chartView').classList.remove('hidden');
+    
+    // 儲存資料到 LocalStorage
+    localStorage.setItem('ziwei_pwa_data', JSON.stringify({name, dateInput, hourValue}));
+}
     // 五行局推算邏輯
     function getWuXingJu(tg, dz) {
         const table = [
