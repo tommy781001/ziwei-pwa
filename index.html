@@ -4,135 +4,183 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>紫微斗數排盤</title>
-    <meta name="theme-color" content="#6d28d9">
-    <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6d28d9">
+    <link rel="apple-touch-icon" href="icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f2f5; }
         .ziwei-font { font-family: 'Noto Serif TC', serif; }
-        .chart-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 2px; background-color: #d1d5db; }
+        /* 12宮位排列順序：由左下順時針繞一圈 */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            background-color: #333;
+            border: 2px solid #333;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+        }
+        .cell {
+            background-color: white;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+        .center-box {
+            grid-column: 2 / 4;
+            grid-row: 2 / 4;
+            background-color: #faf5ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            text-align: center;
+        }
+        .main-star { color: #b91c1c; font-weight: bold; writing-mode: vertical-rl; }
+        .palace-name { background: #6d28d9; color: white; padding: 2px 4px; border-radius: 2px; font-size: 0.7rem; align-self: flex-end; }
+        .dz-label { font-size: 0.6rem; color: #666; position: absolute; bottom: 2px; left: 4px; }
     </style>
 </head>
-<body class="p-4">
+<body class="p-2 md:p-6">
 
-    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 mb-6">
-        <h1 class="text-2xl font-bold text-purple-800 mb-4 text-center ziwei-font">紫微斗數排盤系統</h1>
-        
-        <form id="ziweiForm" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">姓名</label>
-                    <input type="text" id="userName" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 focus:ring-purple-500 focus:border-purple-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">性別</label>
-                    <select id="gender" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
-                        <option value="male">乾造 (男)</option>
-                        <option value="female">坤造 (女)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">曆法</label>
-                    <select id="calendarType" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
-                        <option value="solar">國曆 (西曆)</option>
-                        <option value="lunar">農曆</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">出生日期</label>
-                    <input type="date" id="birthDate" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">出生時辰</label>
-                <select id="birthHour" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
-                    <option value="0">23:00-01:00 (子時)</option>
-                    <option value="1">01:00-03:00 (丑時)</option>
-                    <option value="2">03:00-05:00 (寅時)</option>
-                    <option value="3">05:00-07:00 (卯時)</option>
-                    <option value="4">07:00-09:00 (辰時)</option>
-                    <option value="5">09:00-11:00 (巳時)</option>
-                    <option value="6">11:00-13:00 (午時)</option>
-                    <option value="7">13:00-15:00 (未時)</option>
-                    <option value="8">15:00-17:00 (申時)</option>
-                    <option value="9">17:00-19:00 (酉時)</option>
-                    <option value="10">19:00-21:00 (戌時)</option>
-                    <option value="11">21:00-23:00 (亥時)</option>
+    <div class="max-w-xl mx-auto bg-white rounded-xl shadow-lg p-5 mb-6 border-t-4 border-purple-600">
+        <h1 class="text-xl font-bold text-purple-900 mb-4 ziwei-font text-center">紫微斗數 PWA 排盤</h1>
+        <form id="ziweiForm" class="grid grid-cols-2 gap-3 text-sm">
+            <input type="text" id="userName" placeholder="姓名" required class="border p-2 rounded">
+            <select id="gender" class="border p-2 rounded">
+                <option value="1">乾造 (男)</option>
+                <option value="0">坤造 (女)</option>
+            </select>
+            <select id="calendarType" class="border p-2 rounded">
+                <option value="solar">國曆</option>
+                <option value="lunar">農曆</option>
+            </select>
+            <input type="date" id="birthDate" required class="border p-2 rounded">
+            <div class="col-span-2">
+                <select id="birthHour" class="w-full border p-2 rounded">
+                    <option value="0">子 23:00-01:00</option>
+                    <option value="1">丑 01:00-03:00</option>
+                    <option value="2">寅 03:00-05:00</option>
+                    <option value="3">卯 05:00-07:00</option>
+                    <option value="4">辰 07:00-09:00</option>
+                    <option value="5">巳 09:00-11:00</option>
+                    <option value="6">午 11:00-13:00</option>
+                    <option value="7">未 13:00-15:00</option>
+                    <option value="8">申 15:00-17:00</option>
+                    <option value="9">酉 17:00-19:00</option>
+                    <option value="10">戌 19:00-21:00</option>
+                    <option value="11">亥 21:00-23:00</option>
                 </select>
             </div>
-
-            <button type="submit" class="w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-md hover:bg-purple-700 transition duration-200">
-                生成命盤並儲存
-            </button>
+            <button type="submit" class="col-span-2 bg-purple-700 text-white font-bold py-2 rounded-lg mt-2">執行排盤</button>
         </form>
     </div>
 
-    <div id="chartContainer" class="hidden">
-        <h2 class="text-xl font-bold mb-2 text-center text-gray-800" id="displayInfo"></h2>
-        <div class="chart-grid border-2 border-gray-800 aspect-square max-w-xl mx-auto text-xs bg-white">
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>巳</span><div id="cell-5"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>午</span><div id="cell-6"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>未</span><div id="cell-7"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>申</span><div id="cell-8"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>辰</span><div id="cell-4"></div></div>
-            <div class="col-span-2 row-span-2 bg-purple-50 flex items-center justify-center font-bold text-lg text-purple-300">紫微命盤</div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>酉</span><div id="cell-9"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>卯</span><div id="cell-3"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>戌</span><div id="cell-10"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>寅</span><div id="cell-2"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>丑</span><div id="cell-1"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>子</span><div id="cell-0"></div></div>
-            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>亥</span><div id="cell-11"></div></div>
+    <div id="chartView" class="hidden">
+        <div class="chart-grid" id="mainChart">
+            <div class="center-box shadow-inner">
+                <div id="centerInfo" class="text-xs space-y-1"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // 處理資料儲存與顯示
+        const DZ = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        const PALACES = ["命宮", "兄弟", "夫妻", "子女", "財帛", "疾厄", "遷移", "交友", "官祿", "田宅", "福德", "父母"];
+        
+        // 映射網頁 Grid 座標到地支索引
+        // Grid 順序：左上到右下
+        const gridOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
+
         document.getElementById('ziweiForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            const userData = {
-                name: document.getElementById('userName').value,
-                gender: document.getElementById('gender').options[document.getElementById('gender').selectedIndex].text,
-                calendar: document.getElementById('calendarType').value,
-                date: document.getElementById('birthDate').value,
-                hour: document.getElementById('birthHour').options[document.getElementById('birthHour').selectedIndex].text
-            };
-
-            // 儲存到 LocalStorage
-            localStorage.setItem('latestZiweiData', JSON.stringify(userData));
-            
-            // 顯示基本結果
-            document.getElementById('displayInfo').innerText = `${userData.name} (${userData.gender}) - ${userData.date} ${userData.hour}`;
-            document.getElementById('chartContainer').classList.remove('hidden');
-            
-            alert('命盤資料已更新並儲存在此瀏覽器中');
+            renderChart();
         });
 
-        // 頁面載入時讀取舊資料
-        window.onload = function() {
-            const savedData = localStorage.getItem('latestZiweiData');
-            if (savedData) {
-                const data = JSON.parse(savedData);
+        function renderChart() {
+            const name = document.getElementById('userName').value;
+            const dateStr = document.getElementById('birthDate').value;
+            const hourIdx = parseInt(document.getElementById('birthHour').value);
+            const isSolar = document.getElementById('calendarType').value === 'solar';
+            
+            if(!dateStr) return;
+            const d = new Date(dateStr);
+            let lunar;
+            if(isSolar) {
+                lunar = Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
+            } else {
+                lunar = Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()); // 簡化邏輯，假設輸入即農曆
+            }
+
+            // 1. 計算命宮位置 (寅宮起正月，順數生月，逆數生時)
+            // 簡化公式：(月Idx - 時Idx + 12) % 12 + 2 (寅是2)
+            const month = lunar.getMonth();
+            const mingIdx = (month - hourIdx + 12) % 12 + 2;
+            const finalMingIdx = mingIdx % 12;
+
+            // 2. 清理並重新繪製
+            const chartArea = document.getElementById('mainChart');
+            // 保留中央區，清除其他 cell
+            Array.from(chartArea.querySelectorAll('.cell')).forEach(el => el.remove());
+
+            gridOrder.forEach((dzIdx, gridIdx) => {
+                if(dzIdx === -1) return; // 中央區域跳過
+
+                const cell = document.createElement('div');
+                cell.className = 'cell border';
+                
+                // 計算該宮位名稱
+                const palaceIdx = (dzIdx - finalMingIdx + 12) % 12;
+                const pName = PALACES[palaceIdx];
+
+                cell.innerHTML = `
+                    <div class="flex flex-row-reverse h-full">
+                        <div class="main-star text-sm">${getStars(dzIdx, month, hourIdx)}</div>
+                    </div>
+                    <span class="dz-label">${DZ[dzIdx]}</span>
+                    <span class="palace-name">${pName}</span>
+                `;
+                
+                // 根據 Grid 順序插入
+                chartArea.insertBefore(cell, chartArea.children[gridIdx]);
+            });
+
+            document.getElementById('centerInfo').innerHTML = `
+                <p class="font-bold text-lg text-purple-800">${name}</p>
+                <p>${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}日</p>
+                <p>${DZ[hourIdx]}時生</p>
+            `;
+            document.getElementById('chartView').classList.remove('hidden');
+            
+            // 儲存
+            localStorage.setItem('ziwei_pwa_data', JSON.stringify({name, dateStr, hourIdx}));
+        }
+
+        function getStars(dzIdx, month, hour) {
+            // 這裡可以擴展十四主星邏輯
+            // 目前先做演示，實際需要導入更複雜的五行局與紫微星定位公式
+            return ""; 
+        }
+
+        // 載入緩存
+        window.onload = () => {
+            const data = JSON.parse(localStorage.getItem('ziwei_pwa_data'));
+            if(data) {
                 document.getElementById('userName').value = data.name;
-                document.getElementById('birthDate').value = data.date;
-                // 其他欄位可依此類推
+                document.getElementById('birthDate').value = data.dateStr;
+                document.getElementById('birthHour').value = data.hourIdx;
             }
         };
-
-        // 註冊 Service Worker (PWA 必備)
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed', err));
-            });
-        }
     </script>
 </body>
 </html>
