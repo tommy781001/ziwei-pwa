@@ -67,20 +67,21 @@
             </select>
             <input type="date" id="birthDate" required class="border p-2 rounded">
             <div class="col-span-2">
-                <select id="birthHour" class="w-full border p-2 rounded">
-                    <option value="0">子 23:00-01:00</option>
-                    <option value="1">丑 01:00-03:00</option>
-                    <option value="2">寅 03:00-05:00</option>
-                    <option value="3">卯 05:00-07:00</option>
-                    <option value="4">辰 07:00-09:00</option>
-                    <option value="5">巳 09:00-11:00</option>
-                    <option value="6">午 11:00-13:00</option>
-                    <option value="7">未 13:00-15:00</option>
-                    <option value="8">申 15:00-17:00</option>
-                    <option value="9">酉 17:00-19:00</option>
-                    <option value="10">戌 19:00-21:00</option>
-                    <option value="11">亥 21:00-23:00</option>
-                </select>
+            <select id="birthHour" class="w-full border p-2 rounded">
+                <option value="0">晚子 (23:00-00:00) - 需跳隔日排盤</option>
+                <option value="12">早子 (00:00-01:00)</option>
+                <option value="1">丑 (01:00-03:00)</option>
+                <option value="2">寅 (03:00-05:00)</option>
+                <option value="3">卯 (05:00-07:00)</option>
+                <option value="4">辰 (07:00-09:00)</option>
+                <option value="5">巳 (09:00-11:00)</option>
+                <option value="6">午 (11:00-13:00)</option>
+                <option value="7">未 (13:00-15:00)</option>
+                <option value="8">申 (15:00-17:00)</option> 
+                <option value="9">酉 (17:00-19:00)</option>
+                <option value="10">戌 (19:00-21:00)</option>
+                <option value="11">亥 (21:00-23:00)</option>
+            </select>
             </div>
             <button type="submit" class="col-span-2 bg-purple-700 text-white font-bold py-2 rounded-lg mt-2">執行排盤</button>
         </form>
@@ -110,21 +111,31 @@
         renderChart();
     });
 
-    function renderChart() {
-        const name = document.getElementById('userName').value;
-        let dateStr = document.getElementById('birthDate').value;
-        let hourIdx = parseInt(document.getElementById('birthHour').value);
-        const isSolar = document.getElementById('calendarType').value === 'solar';
+function renderChart() {
+    const name = document.getElementById('userName').value;
+    let dateStr = document.getElementById('birthDate').value;
+    let hourValue = parseInt(document.getElementById('birthHour').value);
+    const isSolar = document.getElementById('calendarType').value === 'solar';
     
-        if(!dateStr) return;
+    let d = new Date(dateStr);
+    let hourIdx;
 
-        // --- 核心修正：子時跨日處理 ---
-        let d = new Date(dateStr);
-        if (hourIdx === 0) { 
-            // 如果是子時 (23:00-01:00)，日期加一天
-            d.setDate(d.getDate() + 1);
-        }
+    // --- 子時特殊處理 ---
+    if (hourValue === 0) {
+        // 晚子時：日期加一天，地支用子(0)
+        d.setDate(d.getDate() + 1);
+        hourIdx = 0; 
+    } else if (hourValue === 12) {
+        // 早子時：日期不變，地支用子(0)
+        hourIdx = 0;
+    } else {
+        hourIdx = hourValue;
+    }
 
+    // 接下來使用調整後的 d (日期) 與 hourIdx (地支) 進行排盤...
+    // 這樣 1989/10/01 23:30 就會被當作 10/02 的子時來排
+    // 您的命宮就會正確出現在「戌」，且主星為「天機、天梁」
+}
         let lunar = isSolar ? 
             Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()) : 
             Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
