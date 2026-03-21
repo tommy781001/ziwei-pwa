@@ -111,28 +111,40 @@
     });
 
     function renderChart() {
+    // 在 renderChart 函數內進行修正
+    function renderChart() {
         const name = document.getElementById('userName').value;
-        const dateStr = document.getElementById('birthDate').value;
-        const hourIdx = parseInt(document.getElementById('birthHour').value);
+        let dateStr = document.getElementById('birthDate').value;
+        let hourIdx = parseInt(document.getElementById('birthHour').value);
         const isSolar = document.getElementById('calendarType').value === 'solar';
-        
-        const d = new Date(dateStr);
-        let lunar = isSolar ? Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()) : Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    
+        if(!dateStr) return;
 
-        const lYear = lunar.getYear();
-        const lMonth = lunar.getMonth();
-        const lDay = lunar.getDay();
-        const yearTGIdx = (lYear - 4) % 10; // 取出生年天干
+        // --- 核心修正：子時跨日處理 ---
+        let d = new Date(dateStr);
+        if (hourIdx === 0) { 
+            // 如果是子時 (23:00-01:00)，日期加一天
+            d.setDate(d.getDate() + 1);
+        }
 
-        // 1. 定命宮 (寅起正月，順數月，逆數時)
+        let lunar = isSolar ? 
+            Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()) : 
+            Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
+
+            const lYear = lunar.getYear();
+            const lMonth = lunar.getMonth();
+            const lDay = lunar.getDay();
+            const yearTGIdx = (lYear - 4) % 10; // 己年為 5
+
+        // 1. 定命宮 (九月生、子時)
+        // 公式：月(9) - 時(0) = 9，從寅(2)起算順數 9 格 = 戌(10)
         const mingIdx = (lMonth - hourIdx + 12) % 12 + 2;
-        const finalMingIdx = mingIdx % 12;
+        const finalMingIdx = mingIdx % 12; // 這裡會得到 10 (戌)
 
-        // 2. 定五行局 (簡化版：根據命宮地支與年干)
-        // 這裡使用標準的六十甲子納音推算法
+        // 2. 定五行局 (己年 + 戌宮 = 火六局)
         const juice = getWuXingJu(yearTGIdx, finalMingIdx); 
 
-        // 3. 定紫微星位置
+        // 3. 定紫微星 (火六局、初三生 -> 紫微在未)
         const ziweiIdx = getZiweiIdx(juice, lDay);
 
         // 4. 定天府星位置 (與紫微星對稱於 寅申線)
