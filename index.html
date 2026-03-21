@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紫微斗數排盤</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6d28d9">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
+        .ziwei-font { font-family: 'Noto Serif TC', serif; }
+        .chart-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 2px; background-color: #d1d5db; }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 mb-6">
+        <h1 class="text-2xl font-bold text-purple-800 mb-4 text-center ziwei-font">紫微斗數排盤系統</h1>
+        
+        <form id="ziweiForm" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">姓名</label>
+                    <input type="text" id="userName" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">性別</label>
+                    <select id="gender" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
+                        <option value="male">乾造 (男)</option>
+                        <option value="female">坤造 (女)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">曆法</label>
+                    <select id="calendarType" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
+                        <option value="solar">國曆 (西曆)</option>
+                        <option value="lunar">農曆</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">出生日期</label>
+                    <input type="date" id="birthDate" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">出生時辰</label>
+                <select id="birthHour" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-gray-50">
+                    <option value="0">23:00-01:00 (子時)</option>
+                    <option value="1">01:00-03:00 (丑時)</option>
+                    <option value="2">03:00-05:00 (寅時)</option>
+                    <option value="3">05:00-07:00 (卯時)</option>
+                    <option value="4">07:00-09:00 (辰時)</option>
+                    <option value="5">09:00-11:00 (巳時)</option>
+                    <option value="6">11:00-13:00 (午時)</option>
+                    <option value="7">13:00-15:00 (未時)</option>
+                    <option value="8">15:00-17:00 (申時)</option>
+                    <option value="9">17:00-19:00 (酉時)</option>
+                    <option value="10">19:00-21:00 (戌時)</option>
+                    <option value="11">21:00-23:00 (亥時)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-md hover:bg-purple-700 transition duration-200">
+                生成命盤並儲存
+            </button>
+        </form>
+    </div>
+
+    <div id="chartContainer" class="hidden">
+        <h2 class="text-xl font-bold mb-2 text-center text-gray-800" id="displayInfo"></h2>
+        <div class="chart-grid border-2 border-gray-800 aspect-square max-w-xl mx-auto text-xs bg-white">
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>巳</span><div id="cell-5"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>午</span><div id="cell-6"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>未</span><div id="cell-7"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>申</span><div id="cell-8"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>辰</span><div id="cell-4"></div></div>
+            <div class="col-span-2 row-span-2 bg-purple-50 flex items-center justify-center font-bold text-lg text-purple-300">紫微命盤</div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>酉</span><div id="cell-9"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>卯</span><div id="cell-3"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>戌</span><div id="cell-10"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>寅</span><div id="cell-2"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>丑</span><div id="cell-1"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>子</span><div id="cell-0"></div></div>
+            <div class="border border-gray-200 p-1 h-24 flex flex-col justify-between"><span>亥</span><div id="cell-11"></div></div>
+        </div>
+    </div>
+
+    <script>
+        // 處理資料儲存與顯示
+        document.getElementById('ziweiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const userData = {
+                name: document.getElementById('userName').value,
+                gender: document.getElementById('gender').options[document.getElementById('gender').selectedIndex].text,
+                calendar: document.getElementById('calendarType').value,
+                date: document.getElementById('birthDate').value,
+                hour: document.getElementById('birthHour').options[document.getElementById('birthHour').selectedIndex].text
+            };
+
+            // 儲存到 LocalStorage
+            localStorage.setItem('latestZiweiData', JSON.stringify(userData));
+            
+            // 顯示基本結果
+            document.getElementById('displayInfo').innerText = `${userData.name} (${userData.gender}) - ${userData.date} ${userData.hour}`;
+            document.getElementById('chartContainer').classList.remove('hidden');
+            
+            alert('命盤資料已更新並儲存在此瀏覽器中');
+        });
+
+        // 頁面載入時讀取舊資料
+        window.onload = function() {
+            const savedData = localStorage.getItem('latestZiweiData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                document.getElementById('userName').value = data.name;
+                document.getElementById('birthDate').value = data.date;
+                // 其他欄位可依此類推
+            }
+        };
+
+        // 註冊 Service Worker (PWA 必備)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed', err));
+            });
+        }
+    </script>
+</body>
+</html>
