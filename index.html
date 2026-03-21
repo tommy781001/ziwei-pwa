@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微專業版 v1.1.0</title>
+    <title>紫微通用修正版 v1.1.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -26,7 +26,7 @@
 <body class="p-2 sm:p-6">
 
     <div class="max-w-md mx-auto bg-white shadow-2xl rounded-3xl p-6 mb-6 border-t-8 border-purple-600">
-        <h1 class="text-2xl font-bold text-center text-slate-800 ziwei-font mb-4">紫微斗數 PWA <span class="text-xs font-mono text-gray-400">v1.1.0</span></h1>
+        <h1 class="text-2xl font-bold text-center text-slate-800 ziwei-font mb-4">紫微斗數 PWA</h1>
         
         <form id="ziweiForm" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
@@ -44,7 +44,7 @@
                 </select>
             </div>
             <div class="flex flex-col gap-2">
-                <button type="submit" class="w-full bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95">立即排盤</button>
+                <button type="submit" class="w-full bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">立即排盤</button>
                 <div class="flex gap-2">
                     <button type="button" onclick="saveToFriendList()" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm">儲存好友</button>
                     <button type="button" onclick="forceReload()" class="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg text-sm italic">強制更新</button>
@@ -53,7 +53,6 @@
         </form>
 
         <div id="friendListSection" class="mt-6 pt-4 border-t border-slate-100 hidden">
-            <p class="text-xs font-bold text-slate-400 mb-2 uppercase">好友名單</p>
             <div id="friendList" class="flex flex-wrap gap-2"></div>
         </div>
     </div>
@@ -64,9 +63,7 @@
                 <div class="center-box" id="centerInfo"></div>
             </div>
         </div>
-        <div class="mt-4 flex justify-center gap-2">
-            <button onclick="exportImage()" class="bg-blue-600 text-white px-6 py-2 rounded-full shadow-lg font-bold active:scale-95">下載命盤圖片</button>
-        </div>
+        <button onclick="exportImage()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-full shadow-lg font-bold">下載命盤圖片</button>
     </div>
 
     <script>
@@ -74,35 +71,28 @@
         const PALACES = ["命宮", "兄弟", "夫妻", "子女", "財帛", "疾厄", "遷移", "交友", "官祿", "田宅", "福德", "父母"];
         const SIHUA_TABLE = { '甲':['廉','破','武','陽'], '乙':['機','梁','紫','陰'], '丙':['同','機','昌','廉'], '丁':['月','同','機','巨'], '戊':['貪','月','弼','機'], '己':['武','貪','梁','曲'], '庚':['陽','武','府','同'], '辛':['巨','陽','曲','昌'], '壬':['梁','紫','左','武'], '癸':['破','巨','陰','貪'] };
         const STAR_MAP = {'紫':'紫微','機':'天機','陽':'太陽','武':'武曲','同':'天同','廉':'廉貞','府':'天府','月':'太陰','貪':'貪狼','巨':'巨門','相':'天相','梁':'天梁','殺':'七殺','破':'破軍','昌':'文昌','曲':'文曲','左':'左輔','弼':'右弼'};
+        const WUXING_MAP = { 2: "水二局", 3: "木三局", 4: "金四局", 5: "土五局", 6: "火六局" };
 
         window.onload = updateFriendListDisplay;
-
-        function forceReload() {
-            localStorage.clear();
-            window.location.reload(true);
-        }
-
+        function forceReload() { localStorage.clear(); window.location.reload(true); }
         function saveToFriendList() {
             const name = document.getElementById('userName').value;
-            if(!name) return alert("請輸入姓名");
+            if(!name) return;
             const data = { name, gender: document.getElementById('gender').value, date: document.getElementById('birthDate').value, hour: document.getElementById('birthHour').value };
             let list = JSON.parse(localStorage.getItem('ziwei_friends') || '[]');
-            list = list.filter(i => i.name !== name); 
+            list = list.filter(i => i.name !== name);
             list.push(data);
             localStorage.setItem('ziwei_friends', JSON.stringify(list));
             updateFriendListDisplay();
-            alert(`已儲存 ${name} 到好友名單`);
+            alert("已儲存好友！");
         }
 
         function updateFriendListDisplay() {
             const list = JSON.parse(localStorage.getItem('ziwei_friends') || '[]');
-            const container = document.getElementById('friendList');
             const section = document.getElementById('friendListSection');
             if(list.length === 0) return section.classList.add('hidden');
             section.classList.remove('hidden');
-            container.innerHTML = list.map(f => `
-                <button onclick='loadFriend(${JSON.stringify(f)})' class="px-3 py-1 bg-slate-100 text-slate-600 text-xs rounded-full border border-slate-200">${f.name}</button>
-            `).join('');
+            document.getElementById('friendList').innerHTML = list.map(f => `<button onclick='loadFriend(${JSON.stringify(f)})' class="px-3 py-1 bg-slate-100 text-slate-600 text-xs rounded-full border border-slate-200">${f.name}</button>`).join('');
         }
 
         function loadFriend(f) {
@@ -117,14 +107,22 @@
 
         function render() {
             const name = document.getElementById('userName').value;
-            const dateStr = document.getElementById('birthDate').value;
+            const dateStr = document.getElementById('birthDate').value; 
             const hVal = document.getElementById('birthHour').value;
-            let d = new Date(dateStr);
-            let hIdx = (hVal === "late-zi") ? (d.setDate(d.getDate()+1), 0) : parseInt(hVal);
-            
-            let lunar = Solar.fromDate(d).getLunar();
-            let lMonth = lunar.getMonth(), lDay = lunar.getDay();
-            let yTG = lunar.getYearGan();
+            if(!dateStr) return;
+
+            let [y, m, d] = dateStr.split('-').map(Number);
+            let hIdx;
+            if (hVal === "late-zi") {
+                let nextDay = Solar.fromYmd(y, m, d).next(1);
+                y = nextDay.getYear(); m = nextDay.getMonth(); d = nextDay.getDay();
+                hIdx = 0;
+            } else {
+                hIdx = parseInt(hVal);
+            }
+
+            let lunar = Solar.fromYmd(y, m, d).getLunar();
+            let lMonth = lunar.getMonth(), lDay = lunar.getDay(), yTG = lunar.getYearGan();
             let yTGIdx = (lunar.getYear() - 4) % 10;
 
             let mPos = (2 + (lMonth - 1) - hIdx + 12) % 12;
@@ -133,27 +131,22 @@
             let zPos = calcZiwei(juice, lDay), fPos = (4 - zPos + 12) % 12;
 
             let stars = Array.from({length:12}, () => []);
-            // 安主星
             ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=>{ if(s) stars[(zPos-i+12)%12].push({n:s, t:'main'}); });
             ["天府","太陰","貪狼","巨門","天相","天梁","七殺"].forEach((s,i)=>{ stars[(fPos-i+12)%12].push({n:s, t:'main'}); });
             stars[(fPos+9)%12].push({n:"破軍", t:'main'});
-
-            // 安吉星
+            
             stars[(10+hIdx)%12].push({n:"文曲", t:'lucky'});
             stars[(10-hIdx+12)%12].push({n:"文昌", t:'lucky'});
             stars[(2+(lMonth-1))%12].push({n:"左輔", t:'lucky'});
             stars[(10-(lMonth-1)+12)%12].push({n:"右弼", t:'lucky'});
             const kuiYue = {'甲':[7,9],'乙':[8,10],'丙':[11,1],'丁':[11,1],'戊':[7,9],'己':[8,10],'庚':[7,9],'辛':[6,2],'壬':[3,5],'癸':[3,5]};
             kuiYue[yTG].forEach((p,i)=>stars[p].push({n:i===0?"天魁":"天鉞", t:'lucky'}));
-
-            // 安煞星
             const yangTuo = {'甲':4,'乙':5,'丙':7,'丁':8,'戊':7,'己':8,'庚':10,'辛':11,'壬':1,'癸':2};
             stars[yangTuo[yTG]].push({n:"擎羊", t:'bad'});
             stars[(yangTuo[yTG]-2+12)%12].push({n:"陀羅", t:'bad'});
             stars[(hIdx+10)%12].push({n:"地劫", t:'bad'});
             stars[(10-hIdx+12)%12].push({n:"地空", t:'bad'});
             
-            // 安四化
             SIHUA_TABLE[yTG].forEach((short, i) => {
                 let full = STAR_MAP[short];
                 stars.forEach(p => p.forEach(s => { if(s.n === full) s.sh = ["祿","權","科","忌"][i]; }));
@@ -168,34 +161,18 @@
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 let pIdx = (mPos - dzIdx + 12) % 12;
-                let sHtml = stars[dzIdx].map(s => `
-                    <div class="${s.t==='main'?'main-star':'small-star'} ${s.t==='lucky'?'lucky':(s.t==='bad'?'bad':'')}">
-                        ${s.n}${s.sh ? `<br><span class="si-hua">${s.sh}</span>` : ''}
-                    </div>
-                `).join('');
-
-                cell.innerHTML = `<div class="flex flex-row-reverse h-24 overflow-hidden">${sHtml}</div>
-                    <span class="dz-text">${DZ[dzIdx]}</span>
-                    <span class="palace-tag ${pIdx===0?'bg-red-600 font-bold':'bg-purple-500'}">${PALACES[pIdx]}</span>`;
+                let sHtml = stars[dzIdx].map(s => `<div class="${s.t==='main'?'main-star':'small-star'} ${s.t==='lucky'?'lucky':(s.t==='bad'?'bad':'')}">${s.n}${s.sh ? `<br><span class="si-hua">${s.sh}</span>` : ''}</div>`).join('');
+                cell.innerHTML = `<div class="flex flex-row-reverse h-24 overflow-hidden">${sHtml}</div><span class="dz-text">${DZ[dzIdx]}</span><span class="palace-tag ${pIdx===0?'bg-red-600 font-bold':'bg-purple-500'}">${PALACES[pIdx]}</span>`;
                 area.insertBefore(cell, area.children[gIdx]);
             });
 
-            document.getElementById('centerInfo').innerHTML = `<p class="font-bold text-lg">${name}</p><p class="text-[10px] text-gray-500">${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日</p><div class="text-red-600 text-xs font-bold mt-2">${["","","水二","木三","金四","土五","火六"][juice]}局</div>`;
+            document.getElementById('centerInfo').innerHTML = `<p class="font-bold text-lg ziwei-font">${name}</p><p class="text-[10px] text-gray-500 font-medium">${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日</p><div class="inline-block px-3 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-full mt-2 border border-red-100">${WUXING_MAP[juice]}</div>`;
             document.getElementById('chartView').classList.remove('hidden');
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
         function calcZiwei(j, d) { let q = Math.ceil(d/j), r = d%j, s = (q+1)%12; return (r===0) ? (s+1)%12 : (r%2===0) ? (s+r)%12 : (s-r+12)%12; }
-
-        function exportImage() {
-            const area = document.getElementById('captureArea');
-            html2canvas(area).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `${document.getElementById('userName').value}_命盤.png`;
-                link.href = canvas.toDataURL();
-                link.click();
-            });
-        }
+        function exportImage() { html2canvas(document.getElementById('captureArea')).then(canvas => { const link = document.createElement('a'); link.download = `${document.getElementById('userName').value}_命盤.png`; link.href = canvas.toDataURL(); link.click(); }); }
     </script>
 </body>
 </html>
