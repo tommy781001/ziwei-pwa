@@ -94,93 +94,118 @@
         </div>
     </div>
 
-    <script>
-        const DZ = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-        const PALACES = ["命宮", "兄弟", "夫妻", "子女", "財帛", "疾厄", "遷移", "交友", "官祿", "田宅", "福德", "父母"];
+<script>
+    // 常數定義
+    const DZ = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const TG = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const PALACES = ["命宮", "兄弟", "夫妻", "子女", "財帛", "疾厄", "遷移", "交友", "官祿", "田宅", "福德", "父母"];
+    const WUXING_MAP = { 2: "水二局", 3: "木三局", 4: "金四局", 5: "土五局", 6: "火六局" };
+
+    // 紫微系與天府系排列順序 (逆時針與順時針)
+    const ZIWEI_GROUP = ["紫微", "天機", "", "太陽", "武曲", "天同", "", "", "廉貞"];
+    const TIANFU_GROUP = ["天府", "太陰", "貪狼", "巨門", "天相", "天梁", "七殺", "", "", "", "", "破軍"];
+
+    document.getElementById('ziweiForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        renderChart();
+    });
+
+    function renderChart() {
+        const name = document.getElementById('userName').value;
+        const dateStr = document.getElementById('birthDate').value;
+        const hourIdx = parseInt(document.getElementById('birthHour').value);
+        const isSolar = document.getElementById('calendarType').value === 'solar';
         
-        // 映射網頁 Grid 座標到地支索引
-        // Grid 順序：左上到右下
+        const d = new Date(dateStr);
+        let lunar = isSolar ? Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()) : Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
+
+        const lYear = lunar.getYear();
+        const lMonth = lunar.getMonth();
+        const lDay = lunar.getDay();
+        const yearTGIdx = (lYear - 4) % 10; // 取出生年天干
+
+        // 1. 定命宮 (寅起正月，順數月，逆數時)
+        const mingIdx = (lMonth - hourIdx + 12) % 12 + 2;
+        const finalMingIdx = mingIdx % 12;
+
+        // 2. 定五行局 (簡化版：根據命宮地支與年干)
+        // 這裡使用標準的六十甲子納音推算法
+        const juice = getWuXingJu(yearTGIdx, finalMingIdx); 
+
+        // 3. 定紫微星位置
+        const ziweiIdx = getZiweiIdx(juice, lDay);
+
+        // 4. 定天府星位置 (與紫微星對稱於 寅申線)
+        const tianfuIdx = (4 - ziweiIdx + 12) % 12;
+
+        // 繪製佈局
+        const chartArea = document.getElementById('mainChart');
+        Array.from(chartArea.querySelectorAll('.cell')).forEach(el => el.remove());
+
         const gridOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
+        
+        gridOrder.forEach((dzIdx, gridIdx) => {
+            if(dzIdx === -1) return;
 
-        document.getElementById('ziweiForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            renderChart();
-        });
-
-        function renderChart() {
-            const name = document.getElementById('userName').value;
-            const dateStr = document.getElementById('birthDate').value;
-            const hourIdx = parseInt(document.getElementById('birthHour').value);
-            const isSolar = document.getElementById('calendarType').value === 'solar';
+            const cell = document.createElement('div');
+            cell.className = 'cell border';
             
-            if(!dateStr) return;
-            const d = new Date(dateStr);
-            let lunar;
-            if(isSolar) {
-                lunar = Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
-            } else {
-                lunar = Lunar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()); // 簡化邏輯，假設輸入即農曆
-            }
-
-            // 1. 計算命宮位置 (寅宮起正月，順數生月，逆數生時)
-            // 簡化公式：(月Idx - 時Idx + 12) % 12 + 2 (寅是2)
-            const month = lunar.getMonth();
-            const mingIdx = (month - hourIdx + 12) % 12 + 2;
-            const finalMingIdx = mingIdx % 12;
-
-            // 2. 清理並重新繪製
-            const chartArea = document.getElementById('mainChart');
-            // 保留中央區，清除其他 cell
-            Array.from(chartArea.querySelectorAll('.cell')).forEach(el => el.remove());
-
-            gridOrder.forEach((dzIdx, gridIdx) => {
-                if(dzIdx === -1) return; // 中央區域跳過
-
-                const cell = document.createElement('div');
-                cell.className = 'cell border';
-                
-                // 計算該宮位名稱
-                const palaceIdx = (dzIdx - finalMingIdx + 12) % 12;
-                const pName = PALACES[palaceIdx];
-
-                cell.innerHTML = `
-                    <div class="flex flex-row-reverse h-full">
-                        <div class="main-star text-sm">${getStars(dzIdx, month, hourIdx)}</div>
-                    </div>
-                    <span class="dz-label">${DZ[dzIdx]}</span>
-                    <span class="palace-name">${pName}</span>
-                `;
-                
-                // 根據 Grid 順序插入
-                chartArea.insertBefore(cell, chartArea.children[gridIdx]);
+            const palaceIdx = (dzIdx - finalMingIdx + 12) % 12;
+            const pName = PALACES[palaceIdx];
+            
+            // 計算該宮位有哪些主星
+            let stars = [];
+            // 紫微系
+            ZIWEI_GROUP.forEach((s, i) => {
+                if (s && (ziweiIdx - i + 12) % 12 === dzIdx) stars.push(s);
+            });
+            // 天府系
+            TIANFU_GROUP.forEach((s, i) => {
+                if (s && (tianfuIdx + i) % 12 === dzIdx) stars.push(s);
             });
 
-            document.getElementById('centerInfo').innerHTML = `
-                <p class="font-bold text-lg text-purple-800">${name}</p>
-                <p>${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}日</p>
-                <p>${DZ[hourIdx]}時生</p>
+            cell.innerHTML = `
+                <div class="flex flex-row-reverse h-full space-x-reverse space-x-1">
+                    ${stars.map(s => `<div class="main-star text-[11px] leading-tight">${s}</div>`).join('')}
+                </div>
+                <span class="dz-label">${DZ[dzIdx]}</span>
+                <span class="palace-name ${pName==='命宮'?'bg-red-600':''}">${pName}</span>
             `;
-            document.getElementById('chartView').classList.remove('hidden');
             
-            // 儲存
-            localStorage.setItem('ziwei_pwa_data', JSON.stringify({name, dateStr, hourIdx}));
-        }
+            chartArea.insertBefore(cell, chartArea.children[gridIdx]);
+        });
 
-        function getStars(dzIdx, month, hour) {
-            // 這裡可以擴展十四主星邏輯
-            // 目前先做演示，實際需要導入更複雜的五行局與紫微星定位公式
-            return ""; 
-        }
+        document.getElementById('centerInfo').innerHTML = `
+            <p class="font-bold text-lg text-purple-800">${name}</p>
+            <p class="text-xs">${TG[yearTGIdx]}${DZ[(lYear-4)%12]}年 ${lMonth}月${lDay}日</p>
+            <p class="text-xs font-semibold text-blue-600">${WUXING_MAP[juice]}</p>
+        `;
+        document.getElementById('chartView').classList.remove('hidden');
+        localStorage.setItem('ziwei_pwa_data', JSON.stringify({name, dateStr, hourIdx}));
+    }
 
-        // 載入緩存
-        window.onload = () => {
-            const data = JSON.parse(localStorage.getItem('ziwei_pwa_data'));
-            if(data) {
-                document.getElementById('userName').value = data.name;
-                document.getElementById('birthDate').value = data.dateStr;
-                document.getElementById('birthHour').value = data.hourIdx;
-            }
-        };
-    </script>
+    // 五行局推算邏輯
+    function getWuXingJu(tg, dz) {
+        const table = [
+            [4, 4, 3, 3, 5, 5], // 甲己年
+            [2, 2, 6, 6, 3, 3], // 乙庚年
+            [5, 5, 4, 4, 2, 2], // 丙辛年
+            [3, 3, 5, 5, 4, 4], // 丁壬年
+            [6, 6, 2, 2, 5, 5]  // 戊癸年
+        ];
+        return table[tg % 5][Math.floor(dz / 2)];
+    }
+
+    // 紫微星定位邏輯 (生日 / 局數)
+    function getZiweiIdx(juice, day) {
+        let quotient = Math.ceil(day / juice);
+        let remainder = day % juice;
+        let start = (quotient + 1) % 12; // 基礎起始位
+        
+        if (remainder === 0) return (start + 1) % 12;
+        if (remainder % 2 === 0) return (start + remainder) % 12; // 偶數順行
+        return (start - remainder + 12) % 12; // 奇數逆行
+    }
+</script>
 </body>
 </html>
