@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微斗數 PWA v1.3.0</title>
+    <title>紫微斗數 PWA v1.3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -20,7 +20,7 @@
             grid-template-rows: repeat(4, 1fr); 
             gap: 2px;
         }
-        .cell { background: white; position: relative; display: flex; align-items: center; justify-content: center; color: #cbd5e1; font-size: 0.8rem; }
+        .cell { background: white; position: relative; display: flex; align-items: center; justify-content: center; color: #cbd5e1; font-size: 0.8rem; font-weight: bold; }
         .center-box { 
             grid-column: 2 / 4; 
             grid-row: 2 / 4; 
@@ -30,7 +30,7 @@
             align-items: center; 
             justify-content: center; 
             text-align: center; 
-            padding: 10px;
+            padding: 12px;
             border: 1px inset #cbd5e1;
         }
     </style>
@@ -40,7 +40,7 @@
     <div class="max-w-xl mx-auto bg-white shadow-xl rounded-3xl p-6 mb-8 border-t-8 border-indigo-600">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-slate-800 ziwei-font">紫微斗數 PWA</h1>
-            <span class="text-xs font-mono text-indigo-400 bg-indigo-50 px-2 py-1 rounded">v1.3.0</span>
+            <span class="text-xs font-mono text-indigo-400 bg-indigo-50 px-2 py-1 rounded">v1.3.1</span>
         </div>
         
         <form id="ziweiForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -105,52 +105,74 @@
     </div>
 
     <script>
+        const TG = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+        const DZ = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        const WUXING = { 2: "水二局", 3: "木三局", 4: "金四局", 5: "土五局", 6: "火六局" };
+
         document.getElementById('ziweiForm').addEventListener('submit', (e) => {
             e.preventDefault();
             
             const name = document.getElementById('userName').value;
-            const gender = document.getElementById('gender').value === "1" ? "乾造 (男)" : "坤造 (女)";
+            const genderStr = document.getElementById('gender').value === "1" ? "乾造 (男)" : "坤造 (女)";
             const dateStr = document.getElementById('birthDate').value; 
             const hVal = document.getElementById('birthHour').value;
+            const hourText = document.getElementById('birthHour').options[document.getElementById('birthHour').selectedIndex].text.split(' ')[0];
             const isLunarInput = document.getElementById('calendarType').value === 'lunar';
             
             let [y, m, d] = dateStr.split('-').map(Number);
             let solar, lunar;
 
-            // 處理晚子時與日期邏輯
             if (isLunarInput) {
-                // 如果是農曆輸入
                 lunar = Lunar.fromYmd(y, m, d);
-                if (hVal === "late-zi") {
-                    // 晚子時農曆日期需跳下一日
-                    lunar = lunar.next(1);
-                }
+                if (hVal === "late-zi") lunar = lunar.next(1);
                 solar = lunar.getSolar();
             } else {
-                // 如果是國曆輸入
                 solar = Solar.fromYmd(y, m, d);
-                if (hVal === "late-zi") {
-                    // 晚子時國曆日期需跳下一日
-                    solar = solar.next(1);
-                }
+                if (hVal === "late-zi") solar = solar.next(1);
                 lunar = solar.getLunar();
             }
 
-            // 顯示中宮資訊
+            // --- 五行局公式計算 ---
+            const yTGIdx = TG.indexOf(lunar.getYearGan());
+            const hIdx = (hVal === "late-zi") ? 0 : parseInt(hVal);
+            const mPos = (2 + (lunar.getMonth() - 1) - hIdx + 12) % 12; // 命宮地支索引
+            
+            // 五虎遁：甲己起丙, 乙庚起戊, 丙辛起庚, 丁壬起壬, 戊癸起甲
+            const startTGIdx = (yTGIdx % 5) * 2 + 2; 
+            const mTGIdx = (startTGIdx + (mPos - 2 + 12) % 12) % 10; // 命宮天干索引
+
+            // 納音五行局矩陣
+            function getWuxingJuice(tgIdx, dzIdx) {
+                const tgGroup = Math.floor(tgIdx / 2); // 甲乙=0, 丙丁=1, 戊己=2, 庚辛=3, 壬癸=4
+                const dzGroup = Math.floor(dzIdx / 2); // 子丑=0, 寅卯=1, 辰巳=2, 午未=3, 申酉=4, 戌亥=5
+                const table = [
+                    [4, 6, 5, 4, 6, 5], // 甲乙
+                    [2, 4, 3, 2, 4, 3], // 丙丁
+                    [5, 2, 6, 5, 2, 6], // 戊己
+                    [3, 5, 4, 3, 5, 4], // 庚辛
+                    [6, 3, 2, 6, 3, 2]  // 壬癸
+                ];
+                return table[tgGroup][dzGroup];
+            }
+            const juice = getWuxingJuice(mTGIdx, mPos);
+
+            // 更新中宮
             document.getElementById('centerInfo').innerHTML = `
                 <p class="text-xl font-black text-slate-800 mb-1">${name}</p>
-                <p class="text-xs text-indigo-600 font-bold mb-3">${gender}</p>
-                <div class="space-y-2 w-full">
-                    <div class="bg-white p-2 rounded border border-slate-100 shadow-sm">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Solar 國曆生日</p>
-                        <p class="text-sm text-slate-700 font-mono">${solar.toYmd()}</p>
+                <p class="text-xs text-indigo-600 font-bold mb-3">${genderStr} / ${hourText}</p>
+                <div class="space-y-1.5 w-full">
+                    <div class="bg-white px-2 py-1.5 rounded border border-slate-100 shadow-sm text-left">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Solar 國曆</p>
+                        <p class="text-xs text-slate-700 font-mono">${solar.toYmd()}</p>
                     </div>
-                    <div class="bg-white p-2 rounded border border-slate-100 shadow-sm">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Lunar 農曆生日</p>
-                        <p class="text-sm text-slate-700">${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日</p>
+                    <div class="bg-white px-2 py-1.5 rounded border border-slate-100 shadow-sm text-left">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Lunar 農曆</p>
+                        <p class="text-xs text-slate-700">${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日</p>
                     </div>
                 </div>
-                <p class="text-[10px] text-slate-400 mt-4 italic">日期轉換已確認</p>
+                <div class="mt-4 px-4 py-1 bg-red-50 text-red-600 text-sm font-black rounded-full border border-red-100 shadow-inner">
+                    ${WUXING[juice]}
+                </div>
             `;
 
             document.getElementById('chartView').classList.remove('hidden');
