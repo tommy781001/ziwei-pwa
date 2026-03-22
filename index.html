@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微斗數 PWA v1.6.0 (紫微星系安星版)</title>
+    <title>紫微斗數 PWA v1.6.1 (修復版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -16,11 +16,8 @@
             grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 2px;
         }
         .cell { background: white; position: relative; padding: 4px; display: flex; flex-direction: column; justify-content: space-between; min-height: 0; }
-        
-        /* v1.6.0 主星顯示樣式 (紅色、垂直書寫) */
         .star-container { display: flex; flex-direction: row-reverse; height: 80%; overflow: hidden; gap: 2px; padding-top: 2px; }
         .main-star { writing-mode: vertical-rl; color: #be123c; font-weight: bold; font-size: 1.1rem; line-height: 1; letter-spacing: 0.1rem; font-family: 'Noto Serif TC', serif; }
-        
         .center-box { 
             grid-column: 2 / 4; grid-row: 2 / 4; background: #f8fafc; 
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
@@ -36,7 +33,7 @@
     <div class="max-w-xl mx-auto bg-white shadow-xl rounded-3xl p-6 mb-6 border-t-8 border-indigo-600">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-slate-800 ziwei-font">紫微斗數 PWA</h1>
-            <span class="text-xs font-mono text-indigo-400 bg-indigo-50 px-2 py-1 rounded">v1.6.0</span>
+            <span class="text-xs font-mono text-indigo-400 bg-indigo-50 px-2 py-1 rounded">v1.6.1</span>
         </div>
         
         <form id="ziweiForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -47,13 +44,14 @@
             <div class="md:col-span-2">
                 <label class="block text-xs font-bold text-slate-400 mb-1">出生時辰</label>
                 <select id="birthHour" class="w-full border-b-2 p-1 outline-none bg-slate-50">
-                    <option value="0">00:00-01:00 (早子)</option><option value="1">丑時</option><option value="2">寅時</option><option value="3">卯時</option><option value="4">辰時</option><option value="5">巳時</option><option value="6">午時</option><option value="7">未時</option><option value="8">申時</option><option value="9">酉時</option><option value="10">戌時</option><option value="11">亥時</option>
-                    <option value="late-zi">23:00-00:00 (晚子) 算隔日</option>
+                    <option value="0">00:00 - 01:00 (早子時)</option><option value="1">01:00 - 03:00 (丑時)</option><option value="2">03:00 - 05:00 (寅時)</option><option value="3">05:00 - 07:00 (卯時)</option><option value="4">07:00 - 09:00 (辰時)</option><option value="5">09:00 - 11:00 (巳時)</option><option value="6">11:00 - 13:00 (午時)</option><option value="7">13:00 - 15:00 (未時)</option><option value="8">15:00 - 17:00 (申時)</option><option value="9">17:00 - 19:00 (酉時)</option><option value="10">19:00 - 21:00 (戌時)</option><option value="11">21:00 - 23:00 (亥時)</option>
+                    <option value="late-zi">23:00 - 00:00 (晚子時) 算隔日</option>
                 </select>
             </div>
+            
             <div class="md:col-span-2 flex flex-col gap-3 mt-4">
-                <button type="submit" class="w-full bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all text-lg">執行排盤</button>
-                <button type="button" onclick="location.reload()" class="w-full bg-slate-200 text-slate-600 py-2 rounded-xl text-sm hover:bg-slate-300">強制更新</button>
+                <button type="submit" class="w-full bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-indigo-800 active:scale-95 transition-all text-lg">執行排盤</button>
+                <button type="button" onclick="location.reload()" class="w-full bg-slate-200 text-slate-600 py-2 rounded-xl text-sm hover:bg-slate-300 transition-all">強制更新</button>
             </div>
         </form>
     </div>
@@ -78,11 +76,21 @@
             const dateStr = document.getElementById('birthDate').value; 
             const hVal = document.getElementById('birthHour').value;
             const hourText = document.getElementById('birthHour').options[document.getElementById('birthHour').selectedIndex].text;
+            
+            // 介面修正：抓取正確的時辰文字 (如 "晚子時" 或 "早子時")
+            let hourDisplayName;
+            if (hVal === "late-zi") {
+                hourDisplayName = "晚子時";
+            } else if (hVal === "0") {
+                hourDisplayName = "早子時";
+            } else {
+                hourDisplayName = hourText.split(' ')[1]; // 丑時、寅時...
+            }
+            
             const isLunarInput = document.getElementById('calendarType').value === 'lunar';
             let [y, m, d] = dateStr.split('-').map(Number);
-            
-            // 處理跨日與曆法轉換
             let solar, lunar;
+
             if (isLunarInput) {
                 lunar = Lunar.fromYmd(y, m, d);
                 if (hVal === "late-zi") lunar = lunar.next(1);
@@ -98,7 +106,7 @@
             const yTGIdx = TG.indexOf(lunar.getYearGan());
             const hIdx = (hVal === "late-zi") ? 0 : parseInt(hVal);
 
-            // 1. 命宮與局數 (v1.5.5 宮位正確版基準)
+            // 1. 宮位 (v1.5.5 宮位正確版基準)
             const mPos = (2 + (lMonth - 1) - hIdx + 12) % 12;
             const startTGIdx = (yTGIdx % 5) * 2 + 2; 
             const mTGIdx = (startTGIdx + (mPos - 2 + 12) % 12) % 10;
@@ -108,40 +116,24 @@
                 return {1:3, 2:4, 3:2, 4:6, 5:5}[n];
             })(mTGIdx, mPos);
 
-            // 【核心修正】：2. 安紫微星 (倍數借數法演算法)
+            // 2. 安紫微星 (倍數借數法演算法)
             function getZiweiPosByLending(d, j) {
                 let Q, R;
-                if (d % j === 0) { // 整除
-                    Q = Math.floor(d / j);
-                    R = 0;
-                } else { // 不能整除，需進位
-                    Q = Math.floor(d / j) + 1;
-                    R = (Q * j) - d;
-                }
-
-                let startPos = (Q + 1) % 12; // 從寅(2)起算 Q 格，公式為 (2 + Q - 1)
+                if (d % j === 0) { Q = Math.floor(d / j); R = 0; } 
+                else { Q = Math.floor(d / j) + 1; R = (Q * j) - d; }
+                let startPos = (Q + 1) % 12;
                 let finalPos;
-                if (R === 0) {
-                    finalPos = startPos;
-                } else if (R % 2 !== 0) { // 奇數逆跳
-                    finalPos = (startPos - R + 12) % 12;
-                } else { // 偶數順跳
-                    finalPos = (startPos + R) % 12;
-                }
+                if (R === 0) { finalPos = startPos; } 
+                else if (R % 2 !== 0) { finalPos = (startPos - R + 12) % 12; } 
+                else { finalPos = (startPos + R) % 12; }
                 return finalPos;
             }
             const zwPos = getZiweiPosByLending(lDay, juice);
 
-            // 【新增】：3. 安紫微星系全體 (逆時針順序)
-            // 紫微(0), 天機(1), 空格(2), 太陽(3), 武曲(4), 天同(5), 空格(6), 空格(7), 廉貞(8)
+            // 3. 安紫微星系全體
             const zwStarsOrder = ["紫微", "天機", "", "太陽", "武曲", "天同", "", "", "廉貞"];
             let zwStarMap = Array.from({length: 12}, () => []);
-            zwStarsOrder.forEach((s, i) => {
-                if (s) {
-                    const finalPos = (zwPos - i + 12) % 12;
-                    zwStarMap[finalPos].push(s);
-                }
-            });
+            zwStarsOrder.forEach((s, i) => { if (s) zwStarMap[(zwPos - i + 12) % 12].push(s); });
 
             // 4. 渲染
             const area = document.getElementById('mainChart');
@@ -152,33 +144,25 @@
                 if (dzIdx === -1) return;
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                
-                // 命宮標籤 (維持不變)
                 const pIdx = (mPos - dzIdx + 12) % 12;
-                const pTag = `<span class="palace-tag ${pIdx === 0 ? 'is-ming' : ''}">${PALACES[pIdx]}</span>`;
-                
-                // 主星顯示 (紅色垂直)
-                let sHtml = '';
-                if (zwStarMap[dzIdx].length > 0) {
-                    sHtml = zwStarMap[dzIdx].map(s => `<div class="main-star">${s}</div>`).join('');
-                }
-
+                let sHtml = zwStarMap[dzIdx].map(s => `<div class="main-star">${s}</div>`).join('');
                 cell.innerHTML = `
                     <div class="star-container">${sHtml}</div>
                     <span class="dz-text">${DZ[dzIdx]}</span>
-                    ${pTag}
+                    <span class="palace-tag ${pIdx === 0 ? 'is-ming' : ''}">${PALACES[pIdx]}</span>
                 `;
                 area.appendChild(cell);
             });
 
-            // 5. 中宮 (維持 v1.5.5 基準)
+            // 介面修正：中宮顯示精確時辰
+            const genderStr = document.getElementById('gender').value === "1" ? "乾造 (男)" : "坤造 (女)";
             document.getElementById('centerInfo').innerHTML = `
-                <div class="mt-1"><p class="text-lg font-black text-slate-800">${name}</p><p class="text-[10px] text-indigo-600 font-bold mb-2">${hourText.split(' ')[1]}</p></div>
+                <div class="mt-1"><p class="text-lg font-black text-slate-800">${name}</p><p class="text-[10px] text-indigo-600 font-bold mb-2">${genderStr} / ${hourDisplayName}</p></div>
                 <div class="space-y-1 w-full">
-                    <div class="bg-white px-2 py-1 rounded border border-slate-100 text-left"><p class="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">SOLAR 國曆</p><p class="text-[11px] text-slate-700 font-mono font-bold">${solar.toYmd()}</p></div>
-                    <div class="bg-white px-2 py-1 rounded border border-slate-100 text-left"><p class="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">LUNAR 農曆</p><p class="text-[11px] text-slate-700 font-bold">${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日</p></div>
+                    <div class="bg-white px-2 py-1 rounded border border-slate-100 shadow-sm text-left"><p class="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">SOLAR 國曆</p><p class="text-[11px] text-slate-700 font-mono font-bold">${solar.toYmd()}</p></div>
+                    <div class="bg-white px-2 py-1 rounded border border-slate-100 shadow-sm text-left"><p class="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">LUNAR 農曆</p><p class="text-[11px] text-slate-700 font-bold">${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日</p></div>
                 </div>
-                <div class="mt-3 inline-block px-5 py-1 bg-red-50 text-red-600 text-xs font-black rounded-full border border-red-200">${WUXING[juice]}</div>
+                <div class="mt-3 inline-block px-5 py-1 bg-red-50 text-red-600 text-xs font-black rounded-full border border-red-200 shadow-sm">${WUXING[juice]}</div>
             `;
             document.getElementById('chartView').classList.remove('hidden');
         });
