@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微斗數 PWA v1.3.2</title>
+    <title>紫微斗數 PWA v1.4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -20,7 +20,7 @@
             grid-template-rows: repeat(4, 1fr); 
             gap: 2px;
         }
-        .cell { background: white; position: relative; display: flex; align-items: center; justify-content: center; color: #cbd5e1; font-size: 0.8rem; font-weight: bold; }
+        .cell { background: white; position: relative; padding: 4px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
         .center-box { 
             grid-column: 2 / 4; 
             grid-row: 2 / 4; 
@@ -28,12 +28,14 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            justify-content: flex-start; /* 改為從頂部開始排，防止姓名跑掉 */
+            justify-content: flex-start; 
             text-align: center; 
             padding: 8px;
             border: 1px inset #cbd5e1;
-            overflow: hidden;
         }
+        .palace-tag { font-size: 0.75rem; color: white; padding: 2px 6px; border-radius: 4px; background: #6366f1; font-weight: bold; }
+        .palace-tag.is-ming { background: #be123c; scale: 1.1; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .dz-text { font-size: 0.7rem; color: #94a3b8; position: absolute; bottom: 4px; left: 6px; font-weight: bold; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -41,7 +43,7 @@
     <div class="max-w-xl mx-auto bg-white shadow-xl rounded-3xl p-6 mb-8 border-t-8 border-indigo-600">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-slate-800 ziwei-font">紫微斗數 PWA</h1>
-            <span class="text-xs font-mono text-indigo-400 bg-indigo-50 px-2 py-1 rounded">v1.3.2</span>
+            <span class="text-xs font-mono text-indigo-400 bg-indigo-50 px-2 py-1 rounded">v1.4.0</span>
         </div>
         
         <form id="ziweiForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -94,13 +96,9 @@
     </div>
 
     <div id="chartView" class="hidden max-w-2xl mx-auto">
-        <div class="bg-slate-900 p-2 md:p-4 rounded-xl shadow-2xl">
+        <div class="bg-slate-900 p-2 md:p-4 rounded-xl shadow-2xl overflow-hidden">
             <div class="chart-container" id="mainChart">
                 <div class="center-box" id="centerInfo"></div>
-                <div class="cell">巳</div><div class="cell">午</div><div class="cell">未</div><div class="cell">申</div>
-                <div class="cell">辰</div><div class="cell">酉</div>
-                <div class="cell">卯</div><div class="cell">戌</div>
-                <div class="cell">寅</div><div class="cell">丑</div><div class="cell">子</div><div class="cell">亥</div>
             </div>
         </div>
     </div>
@@ -108,11 +106,11 @@
     <script>
         const TG = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
         const DZ = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        const PALACES = ["命宮", "兄弟", "夫妻", "子女", "財帛", "疾厄", "遷移", "交友", "官祿", "田宅", "福德", "父母"];
         const WUXING = { 2: "水二局", 3: "木三局", 4: "金四局", 5: "土五局", 6: "火六局" };
 
         document.getElementById('ziweiForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            
             const name = document.getElementById('userName').value;
             const genderStr = document.getElementById('gender').value === "1" ? "乾造 (男)" : "坤造 (女)";
             const dateStr = document.getElementById('birthDate').value; 
@@ -123,7 +121,7 @@
             let [y, m, d] = dateStr.split('-').map(Number);
             let solar, lunar;
 
-            // 1. 日期與跳日處理
+            // 1. 日期處理 (維持 v1.3.2)
             if (isLunarInput) {
                 lunar = Lunar.fromYmd(y, m, d);
                 if (hVal === "late-zi") lunar = lunar.next(1);
@@ -134,31 +132,53 @@
                 lunar = solar.getLunar();
             }
 
-            // 2. 核心：計算命宮天干與地支
+            // 2. 命宮定位邏輯
             const yTGIdx = TG.indexOf(lunar.getYearGan());
             const hIdx = (hVal === "late-zi") ? 0 : parseInt(hVal);
-            // 命宮位置公式
-            const mPos = (2 + (lunar.getMonth() - 1) - hIdx + 12) % 12; 
-            // 五虎遁：求命宮天干
+            const lMonth = lunar.getMonth();
+            // 命宮位置公式：寅(2)起正月，順數月，逆數時
+            const mPos = (2 + (lMonth - 1) - hIdx + 12) % 12;
+
+            // 3. 五行局計算 (維持 v1.3.2)
             const startTGIdx = (yTGIdx % 5) * 2 + 2; 
             const mTGIdx = (startTGIdx + (mPos - 2 + 12) % 12) % 10;
-
-            // 3. 正統納音五行計算公式 (不再依賴大表格，改用純數學演算法)
             function calculateWuxing(tgIdx, dzIdx) {
-                // 天干配數：甲乙1, 丙丁2, 戊己3, 庚辛4, 壬癸5
                 const tgN = Math.floor(tgIdx / 2) + 1;
-                // 地支配數：子丑1, 寅卯2, 辰巳3, 午未1, 申酉2, 戌亥3
                 const dzN = (Math.floor(dzIdx / 2) % 3) + 1;
-                // 納音數 = 天干 + 地支 (若大於5則減5)
                 let n = tgN + dzN;
                 if (n > 5) n -= 5;
-                // 數值轉五行：1木, 2金, 3水, 4火, 5土
                 const map = { 1: 3, 2: 4, 3: 2, 4: 6, 5: 5 };
                 return map[n];
             }
             const juice = calculateWuxing(mTGIdx, mPos);
 
-            // 4. 更新中宮 UI
+            // 4. 繪製命盤 (渲染十二宮位名稱)
+            const area = document.getElementById('mainChart');
+            // 清除舊的宮位格子 (保留中宮)
+            Array.from(area.querySelectorAll('.cell')).forEach(c => c.remove());
+            
+            // 順序網格：巳(5) 午(6) 未(7) 申(8) / 辰(4) ... 酉(9) / 卯(3) ... 戌(10) / 寅(2) 丑(1) 子(0) 亥(11)
+            const gridOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
+            
+            gridOrder.forEach((dzIdx) => {
+                if (dzIdx === -1) return; // 跳過中宮位置
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                
+                // 計算該地支對應的宮位名稱 (逆時針推算)
+                // 命宮在 mPos，則 pIdx = (mPos - dzIdx + 12) % 12
+                const pIdx = (mPos - dzIdx + 12) % 12;
+                const palaceName = PALACES[pIdx];
+                const isMing = (pIdx === 0);
+
+                cell.innerHTML = `
+                    <span class="palace-tag ${isMing ? 'is-ming' : ''}">${palaceName}</span>
+                    <span class="dz-text">${DZ[dzIdx]}</span>
+                `;
+                area.appendChild(cell);
+            });
+
+            // 5. 更新中宮 UI (維持 v1.3.2)
             document.getElementById('centerInfo').innerHTML = `
                 <div class="mt-1">
                     <p class="text-lg font-black text-slate-800 leading-tight">${name}</p>
