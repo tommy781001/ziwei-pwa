@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微斗數 PWA v1.8.4</title>
+    <title>紫微斗數 PWA v1.8.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -40,19 +40,19 @@
         <h1 class="text-xl font-bold text-slate-800 ziwei-font mb-4 text-center">紫微斗數 PWA</h1>
         
         <form id="ziweiForm" class="space-y-4">
+            <div class="grid grid-cols-4 gap-2">
+                <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-400 mb-1">姓名</label><input type="text" id="userName" value="楊博元" class="w-full border-b-2 p-1 outline-none text-sm"></div>
+                <div><label class="block text-[10px] font-bold text-slate-400 mb-1">性別</label><select id="gender" class="w-full border-b-2 p-1 outline-none text-sm"><option value="1">男</option><option value="0">女</option></select></div>
+                <div><label class="block text-[10px] font-bold text-slate-400 mb-1">曆法</label><select id="calendarType" class="w-full border-b-2 p-1 outline-none text-sm"><option value="solar">國曆</option><option value="lunar">農曆</option></select></div>
+            </div>
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="block text-[10px] font-bold text-slate-400 mb-1">姓名</label><input type="text" id="userName" value="楊博元" class="w-full border-b-2 p-1 outline-none text-sm"></div>
-                <div><label class="block text-[10px] font-bold text-slate-400 mb-1">性別</label><select id="gender" class="w-full border-b-2 p-1 outline-none text-sm"><option value="1">男 (乾造)</option><option value="0">女 (坤造)</option></select></div>
-            </div>
-            <div class="grid grid-cols-3 gap-2">
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-slate-400 mb-1">曆法</label><select id="calendarType" class="w-full border-b-2 p-1 outline-none text-sm"><option value="solar">國曆</option><option value="lunar">農曆</option></select></div>
-                <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-400 mb-1">出生日期</label><input type="date" id="birthDate" value="1989-10-01" class="w-full border-b-2 p-1 outline-none text-sm"></div>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">出生時辰</label>
-                <select id="birthHour" class="w-full border-b-2 p-1 outline-none text-sm">
-                    <option value="0">00:00-01:00 (早子)</option><option value="1">01:00-03:00 (丑時)</option><option value="2">03:00-05:00 (寅時)</option><option value="3">05:00-07:00 (卯時)</option><option value="4">07:00-09:00 (辰時)</option><option value="5">09:00-11:00 (巳時)</option><option value="6">11:00-13:00 (午時)</option><option value="7">13:00-15:00 (未時)</option><option value="8">15:00-17:00 (申時)</option><option value="9">17:00-19:00 (酉時)</option><option value="10">19:00-21:00 (戌時)</option><option value="11">21:00-23:00 (亥時)</option><option value="late-zi">23:00-00:00 (晚子)</option>
-                </select>
+                <div><label class="block text-[10px] font-bold text-slate-400 mb-1">出生日期</label><input type="date" id="birthDate" value="1989-10-01" class="w-full border-b-2 p-1 outline-none text-sm"></div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1">出生時辰</label>
+                    <select id="birthHour" class="w-full border-b-2 p-1 outline-none text-sm">
+                        <option value="0">00:00-01:00 (子)</option><option value="1">01:00-03:00 (丑)</option><option value="2">03:00-05:00 (寅)</option><option value="3">05:00-07:00 (卯)</option><option value="4">07:00-09:00 (辰)</option><option value="5">09:00-11:00 (巳)</option><option value="6">11:00-13:00 (午)</option><option value="7">13:00-15:00 (未)</option><option value="8">15:00-17:00 (申)</option><option value="9">17:00-19:00 (酉)</option><option value="10">19:00-21:00 (戌)</option><option value="11">21:00-23:00 (亥)</option><option value="late-zi">23:00-00:00 (子)</option>
+                    </select>
+                </div>
             </div>
             <button type="submit" class="w-full bg-indigo-700 text-white font-bold py-3 rounded-lg active:scale-95 transition-all text-sm">執行排盤</button>
         </form>
@@ -64,7 +64,7 @@
         </div>
     </div>
 
-    <div class="text-center text-[10px] text-slate-400 pb-10"><span>v1.8.4 | </span><button onclick="location.reload()" class="underline hover:text-indigo-500">強制版本更新</button></div>
+    <div class="text-center text-[10px] text-slate-400 pb-10"><span>v1.8.5 | </span><button onclick="location.reload()" class="underline hover:text-indigo-500">強制版本更新</button></div>
 
     <script>
         const TG = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
@@ -103,7 +103,7 @@
             let mainStarMap = Array.from({length: 12}, () => []); 
             let auxStarMap = Array.from({length: 12}, () => []); 
 
-            const shihuaConf = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','陰煞','貪狼']];
+            const shihuaConf = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
             const currentShihua = shihuaConf[yTGIdx];
 
             // 安主星
@@ -121,9 +121,8 @@
             addAux(lucunIdx, '祿存', 'lma'); addAux(lucunIdx+1, '擎羊', 'sha'); addAux(lucunIdx-1, '陀羅', 'sha');
             addAux([2, 11, 8, 5][yDZIdx % 4], '天馬', 'lma');
             
-            const hlS = {'寅':0,'午':0,'戌':0,'申':1,'子':1,'辰':1,'巳':2,'酉':2,'丑':2,'亥':3,'卯':3,'未':3}[zhiName];
-            const hlMap = [[1,3],[2,10],[3,10],[9,10]]; // 火, 鈴
-            addAux(hlMap[hlS][0]+hIdx, '火星', 'sha'); addAux(hlMap[hlS][1]+hIdx, '鈴星', 'sha');
+            const hlMap = {'寅':[1,3],'午':[1,3],'戌':[1,3],'申':[2,10],'子':[2,10],'辰':[2,10],'巳':[3,10],'酉':[3,10],'丑':[3,10],'亥':[9,10],'卯':[9,10],'未':[9,10]};
+            if(hlMap[zhiName]) { addAux(hlMap[zhiName][0]+hIdx, '火星', 'sha'); addAux(hlMap[zhiName][1]+hIdx, '鈴星', 'sha'); }
 
             const area = document.getElementById('mainChart');
             Array.from(area.querySelectorAll('.cell')).forEach(c => c.remove());
