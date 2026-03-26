@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微斗數 PWA v1.8.5</title>
+    <title>紫微斗數 PWA v1.8.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -64,86 +64,95 @@
         </div>
     </div>
 
-    <div class="text-center text-[10px] text-slate-400 pb-10"><span>v1.8.5 | </span><button onclick="location.reload()" class="underline hover:text-indigo-500">強制版本更新</button></div>
+    <div class="text-center text-[10px] text-slate-400 pb-10"><span>v1.8.6 | </span><button onclick="location.reload()" class="underline hover:text-indigo-500">強制版本更新</button></div>
 
     <script>
         const TG = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
         const DZ = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
         const PALACES = ["命宮", "兄弟", "夫妻", "子女", "財帛", "疾厄", "遷移", "交友", "官祿", "田宅", "福德", "父母"];
 
-        document.getElementById('ziweiForm').addEventListener('submit', (e) => {
+        document.getElementById('ziweiForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const name = document.getElementById('userName').value;
-            const genderVal = document.getElementById('gender').value;
-            const dateStr = document.getElementById('birthDate').value; 
-            const hVal = document.getElementById('birthHour').value;
-            
-            const isLunarInput = document.getElementById('calendarType').value === 'lunar';
-            let [y, m, d] = dateStr.split('-').map(Number);
-            let solar, lunar;
-            if (isLunarInput) { lunar = Lunar.fromYmd(y, m, d); if (hVal === "late-zi") lunar = lunar.next(1); solar = lunar.getSolar(); }
-            else { solar = Solar.fromYmd(y, m, d); if (hVal === "late-zi") solar = solar.next(1); lunar = solar.getLunar(); }
+            try {
+                const name = document.getElementById('userName').value;
+                const genderVal = document.getElementById('gender').value;
+                const dateStr = document.getElementById('birthDate').value; 
+                const hVal = document.getElementById('birthHour').value;
+                
+                const isLunarInput = document.getElementById('calendarType').value === 'lunar';
+                let [y, m, d] = dateStr.split('-').map(Number);
+                let solar, lunar;
+                if (isLunarInput) { lunar = Lunar.fromYmd(y, m, d); if (hVal === "late-zi") lunar = lunar.next(1); solar = lunar.getSolar(); }
+                else { solar = Solar.fromYmd(y, m, d); if (hVal === "late-zi") solar = solar.next(1); lunar = solar.getLunar(); }
 
-            const lMonth = lunar.getMonth(), lDay = lunar.getDay();
-            const ganName = lunar.getYearGan(), zhiName = lunar.getYearZhi();
-            const yTGIdx = TG.indexOf(ganName), yDZIdx = DZ.indexOf(zhiName);
-            const hIdx = (hVal === "late-zi") ? 0 : parseInt(hVal);
-            const personType = (yTGIdx % 2 === 0 ? "陽" : "陰") + (genderVal === "1" ? "男" : "女");
+                const lMonth = lunar.getMonth(), lDay = lunar.getDay();
+                const ganName = lunar.getYearGan(), zhiName = lunar.getYearZhi();
+                const yTGIdx = TG.indexOf(ganName), yDZIdx = DZ.indexOf(zhiName);
+                const hIdx = (hVal === "late-zi") ? 0 : parseInt(hVal);
+                const personType = (yTGIdx % 2 === 0 ? "陽" : "陰") + (genderVal === "1" ? "男" : "女");
 
-            const mPos = (2 + (lMonth - 1) - hIdx + 12) % 12;
-            const mTGIdx = ((yTGIdx % 5) * 2 + 2 + (mPos - 2 + 12) % 12) % 10;
-            const juice = (function(tg, dz){
-                const tn = Math.floor(tg/2)+1, dn = (Math.floor(dz/2)%3)+1;
-                let n = tn+dn; if(n>5) n-=5; return {1:3, 2:4, 3:2, 4:6, 5:5}[n];
-            })(mTGIdx, mPos);
+                // 1. 命宮
+                const mPos = (2 + (lMonth - 1) - hIdx + 12) % 12;
+                const mTGIdx = ((yTGIdx % 5) * 2 + 2 + (mPos - 2 + 12) % 12) % 10;
+                const juice = (function(tg, dz){
+                    const tn = Math.floor(tg/2)+1, dn = (Math.floor(dz/2)%3)+1;
+                    let n = tn+dn; if(n>5) n-=5; return {1:3, 2:4, 3:2, 4:6, 5:5}[n] || 2;
+                })(mTGIdx, mPos);
 
-            const zwPos = (function(d, j){ let q = d%j===0 ? d/j : Math.floor(d/j)+1, r = (q*j)-d, p = (q+1)%12; return r===0 ? p : (r%2!==0 ? (p-r+12)%12 : (p+r)%12); })(lDay, juice);
-            const tfPos = (4 - zwPos + 12) % 12;
+                // 2. 紫微天府
+                const zwPos = (function(d, j){ let q = d%j===0 ? d/j : Math.floor(d/j)+1, r = (q*j)-d, p = (q+1)%12; return r===0 ? p : (r%2!==0 ? (p-r+12)%12 : (p+r)%12); })(lDay, juice);
+                const tfPos = (4 - zwPos + 12) % 12;
 
-            let mainStarMap = Array.from({length: 12}, () => []); 
-            let auxStarMap = Array.from({length: 12}, () => []); 
+                let mainStarMap = Array.from({length: 12}, () => []); 
+                let auxStarMap = Array.from({length: 12}, () => []); 
 
-            const shihuaConf = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
-            const currentShihua = shihuaConf[yTGIdx];
+                const shihuaConf = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
+                const currentShihua = shihuaConf[yTGIdx];
 
-            // 安主星
-            ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=>{ if(s) mainStarMap[(zwPos-i+12)%12].push({name:s, sh:currentShihua.indexOf(s)}); });
-            ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=>{ if(s) mainStarMap[(tfPos+i)%12].push({name:s, sh:currentShihua.indexOf(s)}); });
+                const addMain = (pos, s) => { if(s) mainStarMap[(pos+12)%12].push({name:s, sh:currentShihua.indexOf(s)}); };
+                ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=> addMain(zwPos-i, s));
+                ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=> addMain(tfPos+i, s));
 
-            // 安輔星
-            const addAux = (pos, name, type) => { if(!isNaN(pos)) auxStarMap[(pos+12)%12].push({name, type, sh:currentShihua.indexOf(name)}); };
-            addAux(4+lMonth-1, '左輔', 'ji'); addAux(10-lMonth+1, '右弼', 'ji');
-            addAux(10-hIdx, '文昌', 'ji'); addAux(4+hIdx, '文曲', 'ji');
-            const kuiYueMap = {'甲':[1,7],'乙':[0,8],'丙':[11,9],'丁':[11,9],'戊':[1,7],'己':[0,8],'庚':[1,7],'辛':[6,2],'壬':[3,5],'癸':[3,5]};
-            addAux(kuiYueMap[ganName][0], '天魁', 'ji'); addAux(kuiYueMap[ganName][1], '天鉞', 'ji');
-            addAux(11-hIdx, '地空', 'sha'); addAux(11+hIdx, '地劫', 'sha');
-            const lucunIdx = [2, 3, 5, 6, 5, 6, 8, 9, 11, 0][yTGIdx];
-            addAux(lucunIdx, '祿存', 'lma'); addAux(lucunIdx+1, '擎羊', 'sha'); addAux(lucunIdx-1, '陀羅', 'sha');
-            addAux([2, 11, 8, 5][yDZIdx % 4], '天馬', 'lma');
-            
-            const hlMap = {'寅':[1,3],'午':[1,3],'戌':[1,3],'申':[2,10],'子':[2,10],'辰':[2,10],'巳':[3,10],'酉':[3,10],'丑':[3,10],'亥':[9,10],'卯':[9,10],'未':[9,10]};
-            if(hlMap[zhiName]) { addAux(hlMap[zhiName][0]+hIdx, '火星', 'sha'); addAux(hlMap[zhiName][1]+hIdx, '鈴星', 'sha'); }
+                const addAux = (pos, name, type) => { auxStarMap[(pos+12)%12].push({name, type, sh:currentShihua.indexOf(name)}); };
+                addAux(4+lMonth-1, '左輔', 'ji'); addAux(10-lMonth+1, '右弼', 'ji');
+                addAux(10-hIdx, '文昌', 'ji'); addAux(4+hIdx, '文曲', 'ji');
+                const ky = {'甲':[1,7],'乙':[0,8],'丙':[11,9],'丁':[11,9],'戊':[1,7],'己':[0,8],'庚':[1,7],'辛':[6,2],'壬':[3,5],'癸':[3,5]}[ganName];
+                if(ky) { addAux(ky[0], '天魁', 'ji'); addAux(ky[1], '天鉞', 'ji'); }
+                addAux(11-hIdx, '地空', 'sha'); addAux(11+hIdx, '地劫', 'sha');
+                const lcIdx = [2, 3, 5, 6, 5, 6, 8, 9, 11, 0][yTGIdx];
+                addAux(lcIdx, '祿存', 'lma'); addAux(lcIdx+1, '擎羊', 'sha'); addAux(lcIdx-1, '陀羅', 'sha');
+                addAux([2, 11, 8, 5][yDZIdx % 4], '天馬', 'lma');
+                
+                // 火鈴穩健邏輯
+                let hs=0, ls=0;
+                if(['寅','午','戌'].includes(zhiName)) { hs=1; ls=3; }
+                else if(['申','子','辰'].includes(zhiName)) { hs=2; ls=10; }
+                else if(['巳','酉','丑'].includes(zhiName)) { hs=3; ls=10; }
+                else { hs=9; ls=10; }
+                addAux(hs+hIdx, '火星', 'sha'); addAux(ls+hIdx, '鈴星', 'sha');
 
-            const area = document.getElementById('mainChart');
-            Array.from(area.querySelectorAll('.cell')).forEach(c => c.remove());
-            [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11].forEach((dzIdx) => {
-                if (dzIdx === -1) return;
-                const cell = document.createElement('div'); cell.className = 'cell';
-                let auxH = '<div class="aux-star-container">';
-                auxStarMap[dzIdx].forEach(s => { 
-                    const shL = ['祿','權','科','忌'], shC = ['shihua-lu','shihua-quan','shihua-ke','shihua-ji'];
-                    auxH += `<div class="aux-star-box ${s.type}"><span class="aux-star-text">${s.name}</span>${s.sh!==-1?`<span class="shihua-tag ${shC[s.sh]}">${shL[s.sh]}</span>`:''}</div>`; 
+                const area = document.getElementById('mainChart');
+                area.querySelectorAll('.cell').forEach(c => c.remove());
+                const order = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
+                order.forEach(dzIdx => {
+                    if (dzIdx === -1) return;
+                    const cell = document.createElement('div'); cell.className = 'cell';
+                    let aH = '<div class="aux-star-container">';
+                    auxStarMap[dzIdx].forEach(s => { 
+                        const shL=['祿','權','科','忌'], shC=['shihua-lu','shihua-quan','shihua-ke','shihua-ji'];
+                        aH += `<div class="aux-star-box ${s.type}"><span class="aux-star-text">${s.name}</span>${s.sh!==-1?`<span class="shihua-tag ${shC[s.sh]}">${shL[s.sh]}</span>`:''}</div>`; 
+                    });
+                    aH += '</div>';
+                    let mH = '<div class="main-star-container">';
+                    mainStarMap[dzIdx].forEach(s => { const shL=['祿','權','科','忌'], shC=['shihua-lu','shihua-quan','shihua-ke','shihua-ji']; mH += `<div class="main-star-box"><span class="main-star-text">${s.name}</span>${s.sh!==-1?`<span class="shihua-tag ${shC[s.sh]}">${shL[s.sh]}</span>`:''}</div>`; });
+                    mH += '</div>';
+                    const pIdx = (mPos - dzIdx + 12) % 12;
+                    cell.innerHTML = `<div class="stars-wrapper">${aH}${mH}</div><span class="dz-text">${DZ[dzIdx]}</span><span class="palace-tag ${pIdx === 0 ? 'is-ming' : ''}">${PALACES[pIdx]}</span>`;
+                    area.appendChild(cell);
                 });
-                auxH += '</div>';
-                let mainH = '<div class="main-star-container">';
-                mainStarMap[dzIdx].forEach(s => { const shL=['祿','權','科','忌'], shC=['shihua-lu','shihua-quan','shihua-ke','shihua-ji']; mainH += `<div class="main-star-box"><span class="main-star-text">${s.name}</span>${s.sh!==-1?`<span class="shihua-tag ${shC[s.sh]}">${shL[s.sh]}</span>`:''}</div>`; });
-                mainH += '</div>';
-                const pIdx = (mPos - dzIdx + 12) % 12;
-                cell.innerHTML = `<div class="stars-wrapper">${auxH}${mainH}</div><span class="dz-text">${DZ[dzIdx]}</span><span class="palace-tag ${pIdx === 0 ? 'is-ming' : ''}">${PALACES[pIdx]}</span>`;
-                area.appendChild(cell);
-            });
-            document.getElementById('centerInfo').innerHTML = `<p class="text-sm font-black">${name}</p><p class="text-[9px] text-indigo-500 font-bold mb-2">${personType}</p><div class="w-full text-[9px] space-y-1"><p class="bg-white p-1 rounded shadow-sm">國: ${solar.toYmd()}</p><p class="bg-white p-1 rounded shadow-sm">農: ${lunar.getYearInGanZhi()} ${lunar.getMonthInChinese()}${lunar.getDayInChinese()}</p></div><div class="mt-2 px-3 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100">${WUXING[juice]||'未知'}局</div>`;
-            document.getElementById('chartView').classList.remove('hidden');
+                document.getElementById('centerInfo').innerHTML = `<p class="text-sm font-black">${name}</p><p class="text-[9px] text-indigo-500 font-bold mb-1">${personType}</p><div class="w-full text-[9px] space-y-1"><p class="bg-white p-1 rounded shadow-sm">國: ${solar.toYmd()}</p><p class="bg-white p-1 rounded shadow-sm">農: ${lunar.getYearInGanZhi()} ${lunar.getMonthInChinese()}${lunar.getDayInChinese()}</p></div><div class="mt-2 px-3 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100">${juice}局</div>`;
+                document.getElementById('chartView').classList.remove('hidden');
+            } catch(err) { alert("排盤出錯：" + err.message); }
         });
     </script>
 </body>
