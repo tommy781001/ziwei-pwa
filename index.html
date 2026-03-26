@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微斗數 PWA v1.8.1 (吉煞四化修復版)</title>
+    <title>紫微斗數 PWA v1.8.3 (己土化忌修正)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -15,68 +15,70 @@
             border: 4px solid #1e293b; display: grid; 
             grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 2px;
         }
-        .cell { background: white; position: relative; padding: 2px; display: flex; flex-direction: column; justify-content: space-between; min-height: 0; overflow: hidden; }
+        .cell { background: white; position: relative; padding: 2px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
         
-        /* 星曜顯示區域 */
-        .stars-wrapper { display: flex; flex-direction: row-reverse; height: 85%; overflow: hidden; gap: 1px; }
+        /* 增加星星區域寬度 */
+        .stars-wrapper { display: flex; flex-direction: row-reverse; height: 90%; overflow: hidden; gap: 1px; }
 
-        /* 吉煞星樣式 (藍色小字) */
-        .aux-star-container { display: flex; flex-direction: column; flex-shrink: 0; width: 12px; }
-        .aux-star { writing-mode: vertical-rl; color: #1e40af; font-size: 0.6rem; line-height: 1.1; font-weight: bold; }
-        .aux-star.sha { color: #ea580c; } /* 煞星橘色 */
+        /* 吉煞星與四化樣式 (關鍵：輔星也要能顯示四化) */
+        .aux-star-container { display: flex; flex-direction: column; flex-shrink: 0; width: 14px; gap: 1px;}
+        .aux-star-box { position: relative; display: flex; flex-direction: column; align-items: center; }
+        .aux-star-text { writing-mode: vertical-rl; font-size: 0.6rem; line-height: 1.1; font-weight: bold; }
+        .aux-star-box.ji .aux-star-text { color: #1e40af; } /* 吉星藍 */
+        .aux-star-box.sha .aux-star-text { color: #ea580c; } /* 煞星橘色 */
+        .aux-star-box.lma .aux-star-text { color: #854d0e; } /* 祿馬棕色 */
 
-        /* 主星樣式 (紅色大字) */
-        .main-star-container { display: flex; flex-direction: row-reverse; gap: 2px; }
+        /* 主星樣式 */
+        .main-star-container { display: flex; flex-direction: row-reverse; gap: 1px; }
         .main-star-box { position: relative; display: flex; flex-direction: column; align-items: center; }
-        .main-star-text { writing-mode: vertical-rl; color: #be123c; font-weight: bold; font-size: 1rem; line-height: 1; font-family: 'Noto Serif TC', serif; letter-spacing: 0.05rem; }
+        .main-star-text { writing-mode: vertical-rl; color: #be123c; font-weight: bold; font-size: 1rem; line-height: 1.1; font-family: 'Noto Serif TC', serif; letter-spacing: 0.05rem; }
         
-        /* 四化標籤 */
-        .shihua-tag { font-size: 0.5rem; color: white; padding: 1px; border-radius: 2px; line-height: 1; margin-top: 2px; font-weight: black; width: 14px; text-align: center; }
-        .shihua-lu { background: #be123c; }
-        .shihua-quan { background: #15803d; }
-        .shihua-ke { background: #1d4ed8; }
-        .shihua-ji { background: #111827; }
+        /* 四化標籤 (主輔星通用) */
+        .shihua-tag { font-size: 0.5rem; color: white; padding: 1px; border-radius: 2px; margin-top: 2px; font-weight: 900; width: 14px; text-align: center; }
+        .shihua-lu { background: #be123c; } .shihua-quan { background: #15803d; } .shihua-ke { background: #1d4ed8; } .shihua-ji { background: #111827; }
 
-        .center-box { grid-column: 2 / 4; grid-row: 2 / 4; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 8px; border: 1px inset #cbd5e1; }
-        .palace-tag { font-size: 0.7rem; color: white; padding: 2px 5px; border-radius: 4px; background: #6366f1; font-weight: bold; position: absolute; bottom: 4px; right: 4px;}
+        .center-box { grid-column: 2 / 4; grid-row: 2 / 4; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 4px; }
+        .palace-tag { font-size: 0.65rem; color: white; padding: 1px 4px; border-radius: 3px; background: #6366f1; font-weight: bold; position: absolute; bottom: 3px; right: 3px;}
         .palace-tag.is-ming { background: #be123c; }
-        .dz-text { font-size: 0.65rem; color: #94a3b8; position: absolute; bottom: 4px; left: 4px; font-weight: bold; }
+        .dz-text { font-size: 0.6rem; color: #94a3b8; position: absolute; bottom: 3px; left: 3px; font-weight: bold; }
     </style>
 </head>
-<body class="p-2 md:p-8">
+<body class="p-2 md:p-6">
 
-    <div class="max-w-xl mx-auto bg-white shadow-xl rounded-3xl p-6 mb-6 border-t-8 border-indigo-600">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-slate-800 ziwei-font">紫微斗數 PWA</h1>
-            <span class="text-xs font-mono text-indigo-400 bg-indigo-50 px-2 py-1 rounded">v1.8.1</span>
-        </div>
+    <div class="max-w-xl mx-auto bg-white shadow-xl rounded-2xl p-5 mb-4 border-t-4 border-indigo-600">
+        <h1 class="text-xl font-bold text-slate-800 ziwei-font mb-4 text-center">紫微斗數 PWA</h1>
         
-        <form id="ziweiForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">姓名</label><input type="text" id="userName" value="楊博元" required class="w-full border-b-2 p-1 outline-none bg-slate-50"></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">性別</label><select id="gender" class="w-full border-b-2 p-1 outline-none bg-slate-50"><option value="1">男</option><option value="0">女</option></select></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">曆法選擇</label><select id="calendarType" class="w-full border-b-2 p-1 outline-none bg-slate-50"><option value="solar">國曆 (公曆)</option><option value="lunar">農曆 (陰曆)</option></select></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">出生日期</label><input type="date" id="birthDate" value="1989-10-01" required class="w-full border-b-2 p-1 outline-none bg-slate-50"></div>
-            <div class="md:col-span-2">
-                <label class="block text-xs font-bold text-slate-400 mb-1">出生時辰</label>
-                <select id="birthHour" class="w-full border-b-2 p-1 outline-none bg-slate-50">
+        <form id="ziweiForm" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-[10px] font-bold text-slate-400 mb-1">姓名</label><input type="text" id="userName" value="楊博元" class="w-full border-b-2 p-1 outline-none text-sm"></div>
+                <div><label class="block text-[10px] font-bold text-slate-400 mb-1">性別</label><select id="gender" class="w-full border-b-2 p-1 outline-none text-sm"><option value="1">男</option><option value="0">女</option></select></div>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-slate-400 mb-1">曆法</label><select id="calendarType" class="w-full border-b-2 p-1 outline-none text-sm"><option value="solar">國曆</option><option value="lunar">農曆</option></select></div>
+                <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-400 mb-1">出生日期</label><input type="date" id="birthDate" value="1989-10-01" class="w-full border-b-2 p-1 outline-none text-sm"></div>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">出生時辰</label>
+                <select id="birthHour" class="w-full border-b-2 p-1 outline-none text-sm">
                     <option value="0">00:00-01:00 (早子)</option><option value="1">丑時</option><option value="2">寅時</option><option value="3">卯時</option><option value="4">辰時</option><option value="5">巳時</option><option value="6">午時</option><option value="7">未時</option><option value="8">申時</option><option value="9">酉時</option><option value="10">戌時</option><option value="11">亥時</option><option value="late-zi">23:00-00:00 (晚子)</option>
                 </select>
             </div>
-            <div class="md:col-span-2 mt-4"><button type="submit" class="w-full bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all text-lg">執行排盤</button></div>
+            <button type="submit" class="w-full bg-indigo-700 text-white font-bold py-3 rounded-lg active:scale-95 transition-all text-sm">執行排盤</button>
         </form>
     </div>
 
-    <div id="chartView" class="hidden max-w-2xl mx-auto">
+    <div id="chartView" class="hidden max-w-2xl mx-auto mb-10">
         <div class="bg-slate-900 p-1 md:p-4 rounded-xl shadow-2xl overflow-hidden">
             <div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div>
         </div>
     </div>
 
+    <div class="text-center text-[10px] text-slate-400 pb-10"><span>v1.8.3 | </span><button onclick="location.reload()" class="underline hover:text-indigo-500">強制版本更新</button></div>
+
     <script>
         const TG = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
         const DZ = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
         const PALACES = ["命宮", "兄弟", "夫妻", "子女", "財帛", "疾厄", "遷移", "交友", "官祿", "田宅", "福德", "父母"];
-        const WUXING = { 2: "水二局", 3: "木三局", 4: "金四局", 5: "土五局", 6: "火六局" };
 
         document.getElementById('ziweiForm').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -89,108 +91,73 @@
             const isLunarInput = document.getElementById('calendarType').value === 'lunar';
             let [y, m, d] = dateStr.split('-').map(Number);
             let solar, lunar;
+            if (isLunarInput) { lunar = Lunar.fromYmd(y, m, d); if (hVal === "late-zi") lunar = lunar.next(1); solar = lunar.getSolar(); }
+            else { solar = Solar.fromYmd(y, m, d); if (hVal === "late-zi") solar = solar.next(1); lunar = solar.getLunar(); }
 
-            if (isLunarInput) {
-                lunar = Lunar.fromYmd(y, m, d);
-                if (hVal === "late-zi") lunar = lunar.next(1);
-                solar = lunar.getSolar();
-            } else {
-                solar = Solar.fromYmd(y, m, d);
-                if (hVal === "late-zi") solar = solar.next(1);
-                lunar = solar.getLunar();
-            }
-
-            const lMonth = lunar.getMonth();
-            const lDay = lunar.getDay();
-            const ganName = lunar.getYearGan();
-            const zhiName = lunar.getYearZhi();
-            const yTGIdx = TG.indexOf(ganName);
+            const lMonth = lunar.getMonth(), lDay = lunar.getDay();
+            const ganName = lunar.getYearGan(), zhiName = lunar.getYearZhi();
+            const yTGIdx = TG.indexOf(ganName), yDZIdx = DZ.indexOf(zhiName);
             const hIdx = (hVal === "late-zi") ? 0 : parseInt(hVal);
             const personType = (yTGIdx % 2 === 0 ? "陽" : "陰") + (genderVal === "1" ? "男" : "女");
 
-            // 1. 命宮與局數
             const mPos = (2 + (lMonth - 1) - hIdx + 12) % 12;
             const mTGIdx = ((yTGIdx % 5) * 2 + 2 + (mPos - 2 + 12) % 12) % 10;
             const juice = (function(tg, dz){
                 const tn = Math.floor(tg/2)+1, dn = (Math.floor(dz/2)%3)+1;
-                let n = tn+dn; if(n>5) n-=5;
-                return {1:3, 2:4, 3:2, 4:6, 5:5}[n];
+                let n = tn+dn; if(n>5) n-=5; return {1:3, 2:4, 3:2, 4:6, 5:5}[n];
             })(mTGIdx, mPos);
 
-            // 2. 紫微與天府位置
-            const getZw = (d, j) => {
-                let q = d%j===0 ? d/j : Math.floor(d/j)+1, r = (q*j)-d;
-                let p = (q+1)%12;
-                return r===0 ? p : (r%2!==0 ? (p-r+12)%12 : (p+r)%12);
-            };
-            const zwPos = getZw(lDay, juice);
+            const zwPos = (function(d, j){ let q = d%j===0 ? d/j : Math.floor(d/j)+1, r = (q*j)-d, p = (q+1)%12; return r===0 ? p : (r%2!==0 ? (p-r+12)%12 : (p+r)%12); })(lDay, juice);
             const tfPos = (4 - zwPos + 12) % 12;
 
-            // 3. 星曜佈局地圖
-            let mainStarMap = Array.from({length: 12}, () => []); 
-            let auxStarMap = Array.from({length: 12}, () => []); 
+            let mainStarMap = Array.from({length: 12}, () => []); // [{name, sh}]
+            let auxStarMap = Array.from({length: 12}, () => []); // [{name, type, sh}]
 
-            // 3-1. 生年四化 (祿權科忌)
             const shihuaConf = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','陰煞','貪狼']];
             const currentShihua = shihuaConf[yTGIdx];
 
-            // 3-2. 安主星
-            const zwS = ["紫微", "天機", "", "太陽", "武曲", "天同", "", "", "廉貞"];
-            zwS.forEach((s, i) => { if(s) {
-                let sh = currentShihua.indexOf(s);
-                mainStarMap[(zwPos-i+12)%12].push({name: s, sh: sh === -1 ? null : sh});
-            }});
-            const tfS = ["天府", "太陰", "貪狼", "巨門", "天相", "天梁", "七殺", "", "", "", "破軍"];
-            tfS.forEach((s, i) => { if(s) {
-                let sh = currentShihua.indexOf(s);
-                mainStarMap[(tfPos+i)%12].push({name: s, sh: sh === -1 ? null : sh});
-            }});
+            // 安主星
+            ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=>{ if(s) mainStarMap[(zwPos-i+12)%12].push({name:s, sh:currentShihua.indexOf(s)}); });
+            ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=>{ if(s) mainStarMap[(tfPos+i)%12].push({name:s, sh:currentShihua.indexOf(s)}); });
 
-            // 3-3. 安吉煞星
-            auxStarMap[(4 + lMonth - 1) % 12].push({name: '左輔', type: 'ji'});
-            auxStarMap[(10 - lMonth + 1 + 12) % 12].push({name: '右弼', type: 'ji'});
-            auxStarMap[(10 - hIdx + 12) % 12].push({name: '文昌', type: 'ji'});
-            auxStarMap[(4 + hIdx) % 12].push({name: '文曲', type: 'ji'});
+            // 安輔星 (吉煞 + 祿馬) 且【關鍵：吉輔星也要能顯示四化】
+            const addAux = (pos, name, type) => auxStarMap[(pos+12)%12].push({name, type, sh:currentShihua.indexOf(name)});
+            addAux(4+lMonth-1, '左輔', 'ji'); addAux(10-lMonth+1, '右弼', 'ji');
+            addAux(10-hIdx, '文昌', 'ji'); addAux(4+hIdx, '文曲', 'ji');
             const kuiYueMap = {'甲':[1,7],'乙':[0,8],'丙':[11,9],'丁':[11,9],'戊':[1,7],'己':[0,8],'庚':[1,7],'辛':[6,2],'壬':[3,5],'癸':[3,5]};
-            auxStarMap[kuiYueMap[ganName][0]].push({name: '天魁', type: 'ji'});
-            auxStarMap[kuiYueMap[ganName][1]].push({name: '天鉞', type: 'ji'});
-            auxStarMap[(11 - hIdx + 12) % 12].push({name: '地空', type: 'sha'});
-            auxStarMap[(11 + hIdx) % 12].push({name: '地劫', type: 'sha'});
-            
-            // 祿存/擎羊/陀羅
-            const lucunIdx = [2, 3, 5, 6, 5, 6, 8, 9, 11, 0][yTGIdx]; 
-            auxStarMap[lucunIdx].push({name: '祿存', type: 'ji'});
-            auxStarMap[(lucunIdx+1)%12].push({name: '擎羊', type: 'sha'});
-            auxStarMap[(lucunIdx-1+12)%12].push({name: '陀羅', type: 'sha'});
+            addAux(kuiYueMap[ganName][0], '天魁', 'ji'); addAux(kuiYueMap[ganName][1], '天鉞', 'ji');
+            addAux(11-hIdx, '地空', 'sha'); addAux(11+hIdx, '地劫', 'sha');
+            const lucunIdx = [2, 3, 5, 6, 5, 6, 8, 9, 11, 0][yTGIdx];
+            addAux(lucunIdx, '祿存', 'lma'); addAux(lucunIdx+1, '擎羊', 'sha'); addAux(lucunIdx-1, '陀羅', 'sha');
+            addAux([2, 11, 8, 5][yDZIdx % 4], '天馬', 'lma');
+            const huolingBase = {'寅': [1,3], '申': [2,10], '巳': [3,10], '亥': [9,10]}[zhiName] || {'午':[1,3], '戌':[1,3], '子':[2,10], '辰':[2,10], '酉':[3,10], '丑':[3,10], '卯':[9,10], '未':[9,10]}[zhiName];
+            if(huolingBase) { addAux(huolingBase[0]+hIdx, '火星', 'sha'); addAux(huolingBase[1]+hIdx, '鈴星', 'sha'); }
 
-            // 4. 渲染
             const area = document.getElementById('mainChart');
             Array.from(area.querySelectorAll('.cell')).forEach(c => c.remove());
-            const gridOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
-            
-            gridOrder.forEach((dzIdx) => {
+            [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11].forEach((dzIdx) => {
                 if (dzIdx === -1) return;
-                const cell = document.createElement('div');
-                cell.className = 'cell';
+                const cell = document.createElement('div'); cell.className = 'cell';
                 
-                let auxHtml = '<div class="aux-star-container">';
-                auxStarMap[dzIdx].forEach(s => { auxHtml += `<div class="aux-star ${s.type==='sha'?'sha':''}">${s.name}</div>`; });
-                auxHtml += '</div>';
-
-                let mStarHtml = '<div class="main-star-container">';
-                mainStarMap[dzIdx].forEach(s => {
-                    const shLabels = ['祿','權','科','忌'];
-                    const shClasses = ['shihua-lu','shihua-quan','shihua-ke','shihua-ji'];
-                    mStarHtml += `<div class="main-star-box"><span class="main-star-text">${s.name}</span>${s.sh!==null?`<span class="shihua-tag ${shClasses[s.sh]}">${shLabels[s.sh]}</span>`:''}</div>`;
+                // 渲染吉煞星 (輔星也要判定四化標籤)
+                let auxH = '<div class="aux-star-container">';
+                auxStarMap[dzIdx].forEach(s => { 
+                    const shLabels = ['祿','權','科','忌'], shClasses = ['shihua-lu','shihua-quan','shihua-ke','shihua-ji'];
+                    auxH += `<div class="aux-star-box ${s.type}"><span class="aux-star-text">${s.name}</span>${s.sh!==-1?`<span class="shihua-tag ${shClasses[s.sh]}">${shLabels[s.sh]}</span>`:''}</div>`; 
                 });
-                mStarHtml += '</div>';
+                auxH += '</div>';
+
+                // 渲染主星
+                let mainH = '<div class="main-star-container">';
+                mainStarMap[dzIdx].forEach(s => { const shLabels = ['祿','權','科','忌'], shClasses = ['shihua-lu','shihua-quan','shihua-ke','shihua-ji']; mainH += `<div class="main-star-box"><span class="main-star-text">${s.name}</span>${s.sh!==-1?`<span class="shihua-tag ${shClasses[s.sh]}">${shLabels[s.sh]}</span>`:''}</div>`; });
+                mainH += '</div>';
 
                 const pIdx = (mPos - dzIdx + 12) % 12;
-                cell.innerHTML = `<div class="stars-wrapper">${auxHtml}${mStarHtml}</div><span class="dz-text">${DZ[dzIdx]}</span><span class="palace-tag ${pIdx === 0 ? 'is-ming' : ''}">${PALACES[pIdx]}</span>`;
+                cell.innerHTML = `<div class="stars-wrapper">${auxH}${mainH}</div><span class="dz-text">${DZ[dzIdx]}</span><span class="palace-tag ${pIdx === 0 ? 'is-ming' : ''}">${PALACES[pIdx]}</span>`;
                 area.appendChild(cell);
             });
-
-            document.getElementById('centerInfo').innerHTML = `<div class="mt-1"><p class="text-lg font-black text-slate-800">${name}</p><p class="text-[10px] text-indigo-600 font-bold mb-2">${personType} / ${hourDisplayName}</p></div><div class="space-y-1 w-full text-left"><div class="bg-white px-2 py-1 rounded border shadow-sm"><p class="text-[6px] text-slate-400 font-bold uppercase">國曆</p><p class="text-[10px] text-slate-700 font-mono font-bold">${solar.toYmd()}</p></div><div class="bg-white px-2 py-1 rounded border shadow-sm"><p class="text-[6px] text-slate-400 font-bold uppercase">農曆</p><p class="text-[10px] text-slate-700 font-bold">${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日</p></div></div><div class="mt-3 inline-block px-4 py-1 bg-red-50 text-red-600 text-[10px] font-black rounded-full border border-red-200 shadow-sm">${WUXING[juice]}局</div>`;
+            const genderStr = document.getElementById('gender').value === "1" ? "乾造" : "坤造";
+            document.getElementById('centerInfo').innerHTML = `<p class="text-sm font-black">${name}</p><p class="text-[9px] text-indigo-500 font-bold">${personType}</p><div class="w-full text-[9px] mt-2 space-y-1"><p class="bg-white p-1 rounded shadow-sm">國: ${solar.toYmd()}</p><p class="bg-white p-1 rounded shadow-sm">農: ${lunar.getYearInGanZhi()} ${lunar.getMonthInChinese()}${lunar.getDayInChinese()}</p></div><div class="mt-2 px-3 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100">${WUXING[juice]}局</div>`;
             document.getElementById('chartView').classList.remove('hidden');
         });
     </script>
