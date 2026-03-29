@@ -3,17 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>紫微斗數 PWA v1.9.8</title>
+    <title>紫微斗數 PWA v1.9.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap');
         body { background-color: #f8fafc; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
-        .chart-container { 
-            width: 100%; aspect-ratio: 1/1; background-color: #1e293b; 
-            border: 2px solid #0f172a; display: grid; 
-            grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 1px;
-        }
+        .chart-container { width: 100%; aspect-ratio: 1/1; background-color: #1e293b; border: 2px solid #0f172a; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 1px; }
         .cell { background: white; position: relative; padding: 2px; display: flex; flex-direction: column; overflow: hidden; }
         .stars-wrapper { display: flex; flex-direction: row-reverse; height: 82%; overflow: hidden; gap: 3px; }
         .aux-star-container, .main-star-container { display: flex; flex-direction: row-reverse; gap: 2px; }
@@ -52,21 +48,17 @@
                             <option value="0">子(00-01)</option><option value="1">丑(01-03)</option><option value="2">寅(03-05)</option><option value="3">卯(05-07)</option><option value="4">辰(07-09)</option><option value="5">巳(09-11)</option><option value="6">午(11-13)</option><option value="7">未(13-15)</option><option value="8">申(15-17)</option><option value="9">酉(17-19)</option><option value="10">戌(19-21)</option><option value="11">亥(21-23)</option><option value="late-zi">子(23-00)</option>
                         </select></div>
                     </div>
-                    <div class="flex gap-2">
-                        <button type="submit" class="flex-1 bg-indigo-700 text-white font-bold py-3 rounded-xl text-sm active:scale-95">執行排盤</button>
-                        <button type="button" onclick="quickSave()" class="px-4 bg-emerald-500 text-white rounded-xl active:scale-95">💾</button>
-                    </div>
+                    <div class="flex gap-2"><button type="submit" class="flex-1 bg-indigo-700 text-white font-bold py-3 rounded-xl text-sm active:scale-95">執行排盤</button><button type="button" onclick="quickSave()" class="px-4 bg-emerald-500 text-white rounded-xl active:scale-95">💾</button></div>
                 </form>
             </div>
-            <div id="chartContainer" class="hidden">
-                <div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div>
-            </div>
-            <div class="mt-6 text-center text-[10px] text-slate-300">v1.9.8 | <button onclick="location.reload()" class="underline">介面重整</button></div>
+            <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
+            <div class="mt-6 text-center text-[10px] text-slate-300">v1.9.9 | <button onclick="location.reload()" class="underline">介面重整</button></div>
         </section>
 
         <section id="page-data" class="tab-content">
             <div class="bg-white shadow-md rounded-2xl p-5 border-t-4 border-emerald-500 min-h-[400px]">
-                <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold text-slate-700">紀錄管理</h2></div>
+                <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold text-slate-700">紀錄管理</h2><div class="flex gap-2"><button onclick="exportData()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯出</button><button onclick="document.getElementById('importFile').click()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯入</button><input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)"></div></div>
+                <input type="text" id="recordSearch" oninput="renderRecords()" placeholder="🔍 搜尋姓名..." class="w-full mb-4 p-2 text-sm bg-slate-50 rounded-lg outline-none border-b border-transparent focus:border-emerald-500 transition-all">
                 <div id="recordList" class="space-y-1.5"></div>
             </div>
         </section>
@@ -79,7 +71,6 @@
 
     <script>
         const TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'], DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'], PALACES=["命宮","兄弟","夫妻","子女","財帛","疾厄","遷移","交友","官祿","田宅","福德","父母"];
-        
         function switchTab(t){ document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active')); document.getElementById(`page-${t}`).classList.add('active'); document.getElementById(`nav-${t}`).classList.add('active'); if(t==='data') renderRecords(); }
         function getRecords(){ return JSON.parse(localStorage.getItem('zwRecords')||'[]'); }
         
@@ -88,39 +79,32 @@
             let [y,m,d]=document.getElementById('birthDate').value.split('-').map(Number), solar, lunar;
             if(calType==='lunar'){ lunar=Lunar.fromYmd(y,m,d); solar=lunar.getSolar(); } else { solar=Solar.fromYmd(y,m,d); lunar=solar.getLunar(); }
             const hFull = hs.options[hs.selectedIndex].text, hNum = hFull.match(/\((.*?)\)/)[1], hTxt = hFull.split('(')[0] + '時';
-            r.unshift({
-                name:document.getElementById('userName').value||'未命名', gender:document.getElementById('gender').value,
-                date:document.getElementById('birthDate').value, hour:hs.value, calType:calType,
-                sInfo: `${solar.toYmd()} (${hNum})`, lInfo: `${lunar.getYearInGanZhi()}年${lunar.getMonthInChinese()}${lunar.getDayInChinese()} ${hTxt}`
-            });
+            r.unshift({ name:document.getElementById('userName').value||'未命名', gender:document.getElementById('gender').value, date:document.getElementById('birthDate').value, hour:hs.value, calType:calType, sInfo: `${solar.toYmd()} (${hNum})`, lInfo: `${lunar.getYearInGanZhi()}年${lunar.getMonthInChinese()}${lunar.getDayInChinese()} ${hTxt}` });
             localStorage.setItem('zwRecords', JSON.stringify(r)); alert('已存入資料管理');
         }
 
         function renderRecords(){
-            const r=getRecords(), list=document.getElementById('recordList');
-            list.innerHTML=r.length===0?'<p class="text-center py-10 text-slate-400 text-xs">尚無資料</p>':r.map((d,i)=>`
+            const r=getRecords(), kw=document.getElementById('recordSearch').value.toLowerCase(), list=document.getElementById('recordList');
+            const filtered = r.filter(d=>d.name.toLowerCase().includes(kw));
+            list.innerHTML=filtered.length===0?'<p class="text-center py-10 text-slate-400 text-xs">無相符結果</p>':filtered.map((d,i)=>`
                 <div class="bg-white p-2.5 rounded-lg border border-slate-50 flex justify-between items-center text-xs shadow-sm">
-                    <div onclick="loadAndSwitch(${i})" class="flex-1 flex items-center gap-3 overflow-hidden">
+                    <div onclick="loadAndSwitch('${d.date}','${d.name}','${d.gender}','${d.hour}','${d.calType}')" class="flex-1 flex items-center gap-3 overflow-hidden">
                         <div class="flex items-center gap-1.5 min-w-[75px]"><span class="font-bold whitespace-nowrap text-sm">${d.name}</span><span class="text-[10px] px-1 bg-slate-100 text-indigo-500 rounded">${d.gender=='1'?'男':'女'}</span></div>
                         <div class="flex flex-col text-[9px] text-slate-400 leading-normal border-l pl-3 border-slate-200"><span>國：${d.sInfo}</span><span>農：${d.lInfo}</span></div>
                     </div>
-                    <button onclick="deleteRecord(${i})" class="text-slate-300 ml-2 p-1">✕</button>
-                </div>
-            `).join('');
+                    <button onclick="deleteRecord(${r.indexOf(d)})" class="text-slate-300 ml-2 p-1">✕</button>
+                </div>`).join('');
         }
 
-        function loadAndSwitch(i){ 
-            const d=getRecords()[i]; 
-            document.getElementById('userName').value=d.name; 
-            document.getElementById('gender').value=d.gender; 
-            document.getElementById('calendarType').value=d.calType || 'solar'; // 關鍵修正：還原曆法選擇
-            document.getElementById('birthDate').value=d.date; 
-            document.getElementById('birthHour').value=d.hour; 
-            switchTab('chart'); 
-            document.getElementById('ziweiForm').dispatchEvent(new Event('submit')); 
+        function loadAndSwitch(date,name,gender,hour,calType){ 
+            document.getElementById('userName').value=name; document.getElementById('gender').value=gender; document.getElementById('calendarType').value=calType||'solar';
+            document.getElementById('birthDate').value=date; document.getElementById('birthHour').value=hour; 
+            switchTab('chart'); document.getElementById('ziweiForm').dispatchEvent(new Event('submit')); 
         }
 
         function deleteRecord(i){ if(confirm('刪除紀錄？')){ const r=getRecords(); r.splice(i,1); localStorage.setItem('zwRecords',JSON.stringify(r)); renderRecords(); } }
+        function exportData(){ const r=getRecords(); const blob=new Blob([JSON.stringify(r)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='zw_records.json'; a.click(); }
+        function importData(e){ const reader=new FileReader(); reader.onload=f=>{ try{const r=JSON.parse(f.target.result); localStorage.setItem('zwRecords',JSON.stringify(r)); renderRecords(); alert('匯入成功！');}catch(e){alert('格式錯誤');} }; reader.readAsText(e.target.files[0]); }
 
         document.getElementById('ziweiForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -135,8 +119,7 @@
             const tfP=(4-zwP+12)%12, juice=["","","木三局","水二局","金四局","土五局","火六局"][jNum]||"";
             let mMap=Array.from({length:12},()=>[]), aMap=Array.from({length:12},()=>[]);
             const shConf=[['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
-            const curSH=shConf[yTG], hFull=document.getElementById('birthHour').options[document.getElementById('birthHour').selectedIndex].text;
-            const hNum=hFull.match(/\((.*?)\)/)[1], hTxt=hFull.split('(')[0]+'時';
+            const curSH=shConf[yTG], hFull=document.getElementById('birthHour').options[document.getElementById('birthHour').selectedIndex].text, hNum=hFull.match(/\((.*?)\)/)[1], hTxt=hFull.split('(')[0]+'時';
             const addM=(p,s)=>{if(s)mMap[(p+12)%12].push({name:s,sh:curSH.indexOf(s)})};
             ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=>addM(zwP-i,s));
             ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=>addM(tfP+i,s));
@@ -149,7 +132,6 @@
             addA([2,11,8,5][yDZ%4],'天馬','lma');
             let hs=0, ls=0, zhi=lunar.getYearZhi(); if(['寅','午','戌'].includes(zhi)){hs=1;ls=3;} else if(['申','子','辰'].includes(zhi)){hs=2;ls=10;} else if(['巳','酉','丑'].includes(zhi)){hs=3;ls=10;} else {hs=9;ls=10;}
             addA(hs+hIdx,'火星','sha'); addA(ls+hIdx,'鈴星','sha');
-            
             const area=document.getElementById('mainChart'); area.querySelectorAll('.cell').forEach(c=>c.remove());
             [5,6,7,8,4,-1,-1,9,3,-1,-1,10,2,1,0,11].forEach(dzI=>{
                 if(dzI===-1)return;
