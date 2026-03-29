@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>紫微斗數 PWA v1.9.2</title>
+    <title>紫微斗數 PWA v1.9.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -11,34 +11,41 @@
         body { background-color: #f8fafc; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         .ziwei-font { font-family: 'Noto Serif TC', serif; }
         
+        /* 命盤網格強化 */
         .chart-container { 
             width: 100%; aspect-ratio: 1/1; background-color: #1e293b; 
             border: 2px solid #0f172a; display: grid; 
             grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 1px;
         }
-        .cell { background: white; position: relative; padding: 2px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
-        .stars-wrapper { display: flex; flex-direction: row-reverse; height: 100%; overflow: hidden; gap: 1px; }
-        .aux-star-container { display: flex; flex-direction: column; flex-shrink: 0; width: 14px; gap: 1px;}
-        .aux-star-text { writing-mode: vertical-rl; font-size: 0.6rem; line-height: 1.1; font-weight: bold; }
+        .cell { background: white; position: relative; padding: 1px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+        
+        /* 星曜排列優化：防止黏在一起 */
+        .stars-wrapper { display: flex; flex-direction: row-reverse; height: 100%; overflow: hidden; gap: 2px; padding: 1px; }
+        .aux-star-container { display: flex; flex-direction: column; flex-shrink: 0; width: 12px; gap: 1px;}
+        .aux-star-text { writing-mode: vertical-rl; font-size: 0.55rem; line-height: 1; font-weight: bold; white-space: nowrap; }
         .aux-star-box.ji .aux-star-text { color: #1e40af; }
         .aux-star-box.sha .aux-star-text { color: #ea580c; }
         .aux-star-box.lma .aux-star-text { color: #854d0e; }
-        .main-star-container { display: flex; flex-direction: row-reverse; gap: 1px; }
-        .main-star-text { writing-mode: vertical-rl; color: #be123c; font-weight: bold; font-size: 0.9rem; line-height: 1.1; font-family: 'Noto Serif TC', serif; }
-        .shihua-tag { font-size: 0.5rem; color: white; padding: 1px; border-radius: 2px; margin-top: 1px; width: 13px; text-align: center; }
+        
+        .main-star-container { display: flex; flex-direction: row-reverse; gap: 1px; flex: 1; justify-content: flex-start; }
+        .main-star-box { display: flex; flex-direction: column; align-items: center; min-width: 14px; }
+        .main-star-text { writing-mode: vertical-rl; color: #be123c; font-weight: bold; font-size: 0.8rem; line-height: 1; font-family: 'Noto Serif TC', serif; white-space: nowrap; }
+        
+        /* 四化標籤微縮化 */
+        .shihua-tag { font-size: 0.4rem; color: white; padding: 0px 1px; border-radius: 2px; margin-top: 1px; width: 10px; text-align: center; font-weight: 900; }
         .shihua-lu { background: #be123c; } .shihua-quan { background: #15803d; } .shihua-ke { background: #1d4ed8; } .shihua-ji { background: #111827; }
         
-        .center-box { grid-column: 2 / 4; grid-row: 2 / 4; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; border: 1px solid #e2e8f0; }
-        .palace-tag { font-size: 0.65rem; color: white; padding: 1px 4px; border-radius: 3px; background: #6366f1; font-weight: bold; position: absolute; bottom: 3px; right: 3px;}
+        .center-box { grid-column: 2 / 4; grid-row: 2 / 4; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px; }
+        .palace-tag { font-size: 0.6rem; color: white; padding: 1px 3px; border-radius: 2px; background: #6366f1; font-weight: bold; position: absolute; bottom: 2px; right: 2px;}
         .palace-tag.is-ming { background: #be123c; }
-        .dz-text { font-size: 0.6rem; color: #94a3b8; position: absolute; bottom: 3px; left: 3px; font-weight: bold; }
+        .dz-text { font-size: 0.55rem; color: #94a3b8; position: absolute; bottom: 2px; left: 2px; font-weight: bold; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .nav-item.active { color: #4f46e5; border-top: 3px solid #4f46e5; }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-28">
 
     <main class="p-3 max-w-2xl mx-auto">
         <section id="page-chart" class="tab-content active">
@@ -52,7 +59,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <input type="date" id="birthDate" value="1989-10-01" class="w-full border-b p-1 text-sm outline-none">
                         <select id="birthHour" class="w-full border-b p-1 text-sm">
-                            <option value="0">00-01 (子)</option><option value="1">01-03 (丑)</option><option value="2">03-05 (寅)</option><option value="3">05-07 (卯)</option><option value="4">07-09 (辰)</option><option value="5">09-11 (巳)</option><option value="6">11-13 (午)</option><option value="7">13-15 (未)</option><option value="8">15-17 (申)</option><option value="9">17-19 (酉)</option><option value="10">19-21 (戌)</option><option value="11">21-23 (亥)</option><option value="late-zi">23-00 (子)</option>
+                            <option value="0">子(00-01)</option><option value="1">丑(01-03)</option><option value="2">寅(03-05)</option><option value="3">卯(05-07)</option><option value="4">辰(07-09)</option><option value="5">巳(09-11)</option><option value="6">午(11-13)</option><option value="7">未(13-15)</option><option value="8">申(15-17)</option><option value="9">酉(17-19)</option><option value="10">戌(19-21)</option><option value="11">亥(21-23)</option><option value="late-zi">子(23-00)</option>
                         </select>
                     </div>
                     <div class="flex gap-2">
@@ -63,10 +70,13 @@
             </div>
             
             <div id="chartContainer" class="hidden">
-                <div class="bg-slate-900 p-1 rounded-xl shadow-2xl overflow-hidden">
+                <div class="bg-slate-900 p-1 rounded-xl shadow-2xl">
                     <div class="chart-container" id="mainChart">
                         <div class="center-box" id="centerInfo"></div>
                     </div>
+                </div>
+                <div class="mt-8 text-center text-[10px] text-slate-300">
+                    <p>v1.9.3 | <button onclick="location.reload()" class="underline">強制刷新介面</button></p>
                 </div>
             </div>
         </section>
@@ -74,54 +84,34 @@
         <section id="page-data" class="tab-content">
             <div class="bg-white shadow-md rounded-2xl p-5 border-t-4 border-emerald-500 min-h-[400px]">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-slate-700">客戶紀錄</h2>
-                    <div class="flex gap-2">
-                        <button onclick="exportCSV()" class="text-xs bg-slate-50 px-2 py-1 rounded border">匯出</button>
-                        <label class="text-xs bg-slate-50 px-2 py-1 rounded border cursor-pointer">匯入<input type="file" accept=".csv" onchange="importCSV(this)" class="hidden"></label>
+                    <h2 class="text-lg font-bold text-slate-700">歷史紀錄</h2>
+                    <div class="flex gap-1">
+                        <button onclick="exportCSV()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯出</button>
+                        <label class="text-[10px] bg-slate-50 px-2 py-1 rounded border cursor-pointer">匯入<input type="file" accept=".csv" onchange="importCSV(this)" class="hidden"></label>
                     </div>
                 </div>
-                <div id="recordList" class="space-y-2 mb-10"></div>
-                
-                <div class="border-t pt-6 text-center text-[10px] text-slate-300">
-                    <p>版本號：v1.9.2穩定版</p>
-                    <button onclick="location.reload()" class="mt-2 underline">強制重新整理 (解決介面跑掉)</button>
-                </div>
+                <div id="recordList" class="space-y-2"></div>
             </div>
         </section>
     </main>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-20 pb-4 shadow-lg z-50">
-        <button onclick="switchTab('chart')" class="nav-item active flex flex-col items-center justify-center flex-1" id="nav-chart">
-            <span class="text-xl">☯️</span><span class="text-[11px] font-bold">排盤工具</span>
-        </button>
-        <button onclick="switchTab('data')" class="nav-item flex flex-col items-center justify-center flex-1" id="nav-data">
-            <span class="text-xl">👥</span><span class="text-[11px] font-bold">資料管理</span>
-        </button>
+        <button onclick="switchTab('chart')" class="nav-item active flex flex-col items-center justify-center flex-1" id="nav-chart"><span class="text-xl">☯️</span><span class="text-[10px] font-bold">排盤</span></button>
+        <button onclick="switchTab('data')" class="nav-item flex flex-col items-center justify-center flex-1" id="nav-data"><span class="text-xl">👥</span><span class="text-[10px] font-bold">客戶</span></button>
     </nav>
 
     <script>
-        // --- 基本設定與分頁 ---
+        // --- 核心邏輯保持 v1.9.2 之穩定性 ---
         const TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'], DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'], PALACES=["命宮","兄弟","夫妻","子女","財帛","疾厄","遷移","交友","官祿","田宅","福德","父母"];
         function switchTab(t){ document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active')); document.getElementById(`page-${t}`).classList.add('active'); document.getElementById(`nav-${t}`).classList.add('active'); if(t==='data') renderRecords(); }
-
-        // --- 紀錄功能 ---
         function getRecords(){ return JSON.parse(localStorage.getItem('zwRecords')||'[]'); }
-        function quickSave(){
-            const r=getRecords(), hs=document.getElementById('birthHour');
-            r.unshift({name:document.getElementById('userName').value||'未命名', gender:document.getElementById('gender').value, cal:document.getElementById('calendarType').value, date:document.getElementById('birthDate').value, hour:hs.value, hName:hs.options[hs.selectedIndex].text});
-            localStorage.setItem('zwRecords', JSON.stringify(r)); alert('已儲存至管理分頁');
-        }
-        function renderRecords(){
-            const r=getRecords(), list=document.getElementById('recordList');
-            if(r.length===0){ list.innerHTML='<p class="text-center text-slate-400 py-10">尚無資料</p>'; return; }
-            list.innerHTML=r.map((d,i)=>`<div class="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-100"><div onclick="loadAndSwitch(${i})" class="flex-1 cursor-pointer"><div class="font-bold text-slate-800">${d.name} <span class="text-[10px] text-indigo-500">${d.gender=='1'?'(男)':'(女)'}</span></div><div class="text-[10px] text-slate-400">${d.date} | ${d.hName}</div></div><button onclick="deleteRecord(${i})" class="text-red-300 px-2">✕</button></div>`).join('');
-        }
+        function quickSave(){ const r=getRecords(), hs=document.getElementById('birthHour'); r.unshift({name:document.getElementById('userName').value||'未命名', gender:document.getElementById('gender').value, cal:document.getElementById('calendarType').value, date:document.getElementById('birthDate').value, hour:hs.value, hName:hs.options[hs.selectedIndex].text}); localStorage.setItem('zwRecords', JSON.stringify(r)); alert('存入成功'); }
+        function renderRecords(){ const r=getRecords(), list=document.getElementById('recordList'); list.innerHTML=r.length===0?'<p class="text-center py-10 text-slate-400 text-xs">尚無資料</p>':r.map((d,i)=>`<div class="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-100 text-xs"><div onclick="loadAndSwitch(${i})" class="flex-1 cursor-pointer font-bold">${d.name} <span class="text-slate-400 font-normal">(${d.date})</span></div><button onclick="deleteRecord(${i})" class="text-red-300 px-2">✕</button></div>`).join(''); }
         function loadAndSwitch(i){ const d=getRecords()[i]; document.getElementById('userName').value=d.name; document.getElementById('gender').value=d.gender; document.getElementById('calendarType').value=d.cal; document.getElementById('birthDate').value=d.date; document.getElementById('birthHour').value=d.hour; switchTab('chart'); document.getElementById('ziweiForm').dispatchEvent(new Event('submit')); }
-        function deleteRecord(i){ if(confirm('刪除？')){ const r=getRecords(); r.splice(i,1); localStorage.setItem('zwRecords',JSON.stringify(r)); renderRecords(); } }
-        function exportCSV(){ const r=getRecords(); let c="姓名,性別,曆法,日期,時辰\n"; r.forEach(d=>c+=`${d.name},${d.gender},${d.cal},${d.date},${d.hour}\n`); const b=new Blob(["\ufeff"+c],{type:'text/csv'}); const l=document.createElement("a"); l.href=URL.createObjectURL(b); l.download=`紫微紀錄.csv`; l.click(); }
+        function deleteRecord(i){ if(confirm('刪除紀錄？')){ const r=getRecords(); r.splice(i,1); localStorage.setItem('zwRecords',JSON.stringify(r)); renderRecords(); } }
+        function exportCSV(){ const r=getRecords(); let c="姓名,性別,曆法,日期,時辰\n"; r.forEach(d=>c+=`${d.name},${d.gender},${d.cal},${d.date},${d.hour}\n`); const b=new Blob(["\ufeff"+c],{type:'text/csv'}); const l=document.createElement("a"); l.href=URL.createObjectURL(b); l.download=`紫微客戶.csv`; l.click(); }
         function importCSV(i){ const f=i.files[0], rd=new FileReader(); rd.onload=function(e){ const ln=e.target.result.split('\n').slice(1), r=getRecords(); ln.forEach(l=>{ const [n,g,c,d,h]=l.split(','); if(n)r.push({name:n,gender:g,cal:c,date:d,hour:h,hName:'匯入'}); }); localStorage.setItem('zwRecords',JSON.stringify(r)); renderRecords(); }; rd.readAsText(f); }
 
-        // --- 排盤核心 ---
         document.getElementById('ziweiForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const name=document.getElementById('userName').value, genderVal=document.getElementById('gender').value, dateStr=document.getElementById('birthDate').value, hVal=document.getElementById('birthHour').value, isL=document.getElementById('calendarType').value==='lunar';
@@ -161,9 +151,9 @@
                 cell.innerHTML=`<div class="stars-wrapper">${aH}</div>${mH}</div><span class="dz-text">${DZ[dzI]}</span><span class="palace-tag ${pIdx===0?'is-ming':''}">${PALACES[pIdx]}</span>`;
                 area.appendChild(cell);
             });
-            document.getElementById('centerInfo').innerHTML=`<p class="text-sm font-black">${name}</p><p class="text-[10px] text-indigo-500 font-bold mb-1">${(yTG%2==0?'陽':'陰')+(genderVal=='1'?'男':'女')}</p><div class="w-full text-[9px] space-y-1"><p class="bg-white p-1 rounded shadow-sm">國: ${solar.toYmd()}</p><p class="bg-white p-1 rounded shadow-sm">農: ${lunar.getYearInGanZhi()} ${lunar.getMonthInChinese()}${lunar.getDayInChinese()}</p></div><div class="mt-2 px-3 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100">${juice}局</div>`;
+            document.getElementById('centerInfo').innerHTML=`<p class="text-xs font-black">${name}</p><p class="text-[9px] text-indigo-500 font-bold">${(yTG%2==0?'陽':'陰')+(genderVal=='1'?'男':'女')}</p><div class="w-full text-[8px] space-y-0.5 mt-1"><p class="bg-white px-1 rounded border border-slate-100">國: ${solar.toYmd()}</p><p class="bg-white px-1 rounded border border-slate-100">農: ${lunar.getYearInGanZhi()}${lunar.getMonthInChinese()}${lunar.getDayInChinese()}</p></div><div class="mt-1 px-2 bg-red-50 text-red-600 text-[8px] font-black rounded-full border border-red-100">${juice}局</div>`;
             document.getElementById('chartContainer').classList.remove('hidden');
-            window.scrollTo({top:document.getElementById('chartContainer').offsetTop-20, behavior:'smooth'});
+            window.scrollTo({top:document.getElementById('chartContainer').offsetTop-10, behavior:'smooth'});
         });
     </script>
 </body>
