@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>紫微斗數 PWA v2.0.0 穩定重構版</title>
+    <title>紫微斗數 PWA v2.0.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -30,7 +30,7 @@
         .nav-item.active { color: #4f46e5; border-top: 3px solid #4f46e5; }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-32">
     <main class="p-3 max-w-2xl mx-auto">
         <section id="page-chart" class="tab-content active">
             <div class="bg-white shadow-md rounded-2xl p-4 mb-4 border-t-4 border-indigo-600">
@@ -46,17 +46,27 @@
                             <option value="0">子(00-01)</option><option value="1">丑(01-03)</option><option value="2">寅(03-05)</option><option value="3">卯(05-07)</option><option value="4">辰(07-09)</option><option value="5">巳(09-11)</option><option value="6">午(11-13)</option><option value="7">未(13-15)</option><option value="8">申(15-17)</option><option value="9">酉(17-19)</option><option value="10">戌(19-21)</option><option value="11">亥(21-23)</option><option value="late-zi">子(23-00)</option>
                         </select></div>
                     </div>
-                    <div class="flex gap-2"><button type="submit" class="flex-1 bg-indigo-700 text-white font-bold py-3 rounded-xl text-sm active:scale-95">執行排盤</button><button type="button" onclick="quickSave()" class="px-4 bg-emerald-500 text-white rounded-xl active:scale-95">💾</button></div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="flex-1 bg-indigo-700 text-white font-bold py-3 rounded-xl text-sm active:scale-95">執行排盤</button>
+                        <button type="button" onclick="quickSave()" class="px-4 bg-emerald-500 text-white rounded-xl active:scale-95">💾</button>
+                    </div>
                 </form>
             </div>
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
         </section>
 
         <section id="page-data" class="tab-content">
-            <div class="bg-white shadow-md rounded-2xl p-4 border-t-4 border-emerald-500 min-h-[400px]">
+            <div class="bg-white shadow-md rounded-2xl p-4 border-t-4 border-emerald-500 min-h-[450px] flex flex-col">
                 <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold text-slate-700">紀錄管理</h2><div class="flex gap-2"><button onclick="exportData()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯出</button><button onclick="document.getElementById('importFile').click()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯入</button><input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)"></div></div>
                 <input type="text" id="recordSearch" oninput="renderRecords()" placeholder="🔍 搜尋姓名..." class="w-full mb-4 p-2 text-sm bg-slate-50 rounded-lg outline-none">
-                <div id="recordList" class="space-y-2"></div>
+                <div id="recordList" class="space-y-2 flex-1"></div>
+                
+                <div class="mt-8 pt-4 border-t border-slate-50 flex flex-col items-center gap-2">
+                    <span class="text-[10px] text-slate-300 font-medium tracking-widest">VERSION 2.0.1</span>
+                    <button onclick="location.reload(true)" class="text-[9px] px-3 py-1 bg-slate-100 text-slate-500 rounded-full active:bg-indigo-50 active:text-indigo-600 transition-colors">
+                        🔄 檢查並強制更新
+                    </button>
+                </div>
             </div>
         </section>
     </main>
@@ -122,41 +132,23 @@
         }
 
         function renderRecords() {
-            const r = getRecords();
-            const kw = document.getElementById('recordSearch').value.toLowerCase();
-            const list = document.getElementById('recordList');
+            const r = getRecords(), kw = document.getElementById('recordSearch').value.toLowerCase(), list = document.getElementById('recordList');
             const filtered = r.filter(d => d.name.toLowerCase().includes(kw));
-            
-            if (filtered.length === 0) {
-                list.innerHTML = '<p class="text-center py-10 text-slate-400 text-xs">無相符結果</p>';
-                return;
-            }
-        
-            list.innerHTML = filtered.map((d, i) => `
+            list.innerHTML = filtered.length === 0 ? '<p class="text-center py-10 text-slate-400 text-xs">無相符結果</p>' : filtered.map((d, i) => `
                 <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm mb-2">
                     <div onclick="loadAndSwitch('${d.date}','${d.name}','${d.gender}','${d.hour}','${d.calType}')" class="flex-1 flex items-center min-w-0 cursor-pointer">
                         <div class="flex items-center shrink-0 mr-3">
                             <b class="text-slate-700 text-sm mr-2">${d.name}</b>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded ${d.gender === '1' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}">
-                                ${d.gender === '1' ? '男' : '女'}
-                            </span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded ${d.gender === '1' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}">${d.gender === '1' ? '男' : '女'}</span>
                         </div>
-                        
                         <div class="h-8 w-px bg-slate-100 mr-3"></div>
-                        
                         <div class="flex flex-col text-[10px] text-slate-400 leading-tight truncate">
-                            <div class="whitespace-nowrap"><span class="text-slate-300">國：</span>${d.sInfo}</div>
-                            <div class="whitespace-nowrap"><span class="text-slate-300">農：</span>${d.lInfo}</div>
+                            <div class="whitespace-nowrap"><span class="text-slate-300 font-bold">國：</span>${d.sInfo}</div>
+                            <div class="whitespace-nowrap"><span class="text-slate-300 font-bold">農：</span>${d.lInfo}</div>
                         </div>
                     </div>
-                    
-                    <button onclick="deleteRecord(${r.indexOf(d)})" class="text-slate-200 hover:text-red-400 p-2 ml-2 shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            `).join('');
+                    <button onclick="deleteRecord(${r.indexOf(d)})" class="text-slate-200 p-2 ml-2 shrink-0">✕</button>
+                </div>`).join('');
         }
 
         function loadAndSwitch(date,name,gender,hour,calType){ document.getElementById('userName').value=name; document.getElementById('gender').value=gender; document.getElementById('calendarType').value=calType||'solar'; document.getElementById('birthDate').value=date; document.getElementById('birthHour').value=hour; switchTab('chart'); document.getElementById('ziweiForm').dispatchEvent(new Event('submit')); }
