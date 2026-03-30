@@ -52,7 +52,7 @@
                 </form>
             </div>
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
-            <div class="mt-6 text-center text-[10px] text-slate-300">v1.9.9 穩定封版 | <button onclick="location.reload()" class="underline">介面重整</button></div>
+            <div class="mt-6 text-center text-[10px] text-slate-300">v1.9.9 穩定版 | <button onclick="location.reload()" class="underline">介面重整</button></div>
         </section>
 
         <section id="page-data" class="tab-content">
@@ -70,8 +70,82 @@
     </nav>
 
     <script>
-        // ... (程式邏輯同 v1.9.9) ...
+        const TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'], DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'], PALACES=["命宮","兄弟","夫妻","子女","財帛","疾厄","遷移","交友","官祿","田宅","福德","父母"];
+        function switchTab(t){ document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active')); document.getElementById(`page-${t}`).classList.add('active'); document.getElementById(`nav-${t}`).classList.add('active'); if(t==='data') renderRecords(); }
+        function getRecords(){ return JSON.parse(localStorage.getItem('zwRecords')||'[]'); }
+        
+        function quickSave(){
+            const r=getRecords(), hs=document.getElementById('birthHour'), calType=document.getElementById('calendarType').value;
+            let [y,m,d]=document.getElementById('birthDate').value.split('-').map(Number), solar, lunar;
+            if(calType==='lunar'){ lunar=Lunar.fromYmd(y,m,d); solar=lunar.getSolar(); } else { solar=Solar.fromYmd(y,m,d); lunar=solar.getLunar(); }
+            const hFull = hs.options[hs.selectedIndex].text, hNum = hFull.match(/\((.*?)\)/)[1], hTxt = hFull.split('(')[0] + '時';
+            r.unshift({ name:document.getElementById('userName').value||'未命名', gender:document.getElementById('gender').value, date:document.getElementById('birthDate').value, hour:hs.value, calType:calType, sInfo: `${solar.toYmd()} (${hNum})`, lInfo: `${lunar.getYearInGanZhi()}年${lunar.getMonthInChinese()}${lunar.getDayInChinese()} ${hTxt}` });
+            localStorage.setItem('zwRecords', JSON.stringify(r)); alert('已存入資料管理');
+        }
+
+        function renderRecords(){
+            const r=getRecords(), kw=document.getElementById('recordSearch').value.toLowerCase(), list=document.getElementById('recordList');
+            const filtered = r.filter(d=>d.name.toLowerCase().includes(kw));
+            list.innerHTML=filtered.length===0?'<p class="text-center py-10 text-slate-400 text-xs">無相符結果</p>':filtered.map((d,i)=>`
+                <div class="bg-white p-2.5 rounded-lg border border-slate-50 flex justify-between items-center text-xs shadow-sm">
+                    <div onclick="loadAndSwitch('${d.date}','${d.name}','${d.gender}','${d.hour}','${d.calType}')" class="flex-1 flex items-center gap-3 overflow-hidden">
+                        <div class="flex items-center gap-1.5 min-w-[75px]"><span class="font-bold whitespace-nowrap text-sm">${d.name}</span><span class="text-[10px] px-1 bg-slate-100 text-indigo-500 rounded">${d.gender=='1'?'男':'女'}</span></div>
+                        <div class="flex flex-col text-[9px] text-slate-400 leading-normal border-l pl-3 border-slate-200"><span>國：${d.sInfo}</span><span>農：${d.lInfo}</span></div>
+                    </div>
+                    <button onclick="deleteRecord(${r.indexOf(d)})" class="text-slate-300 ml-2 p-1">✕</button>
+                </div>`).join('');
+        }
+
+        function loadAndSwitch(date,name,gender,hour,calType){ 
+            document.getElementById('userName').value=name; document.getElementById('gender').value=gender; document.getElementById('calendarType').value=calType||'solar';
+            document.getElementById('birthDate').value=date; document.getElementById('birthHour').value=hour; 
+            switchTab('chart'); document.getElementById('ziweiForm').dispatchEvent(new Event('submit')); 
+        }
+
+        function deleteRecord(i){ if(confirm('刪除紀錄？')){ const r=getRecords(); r.splice(i,1); localStorage.setItem('zwRecords',JSON.stringify(r)); renderRecords(); } }
+        function exportData(){ const r=getRecords(); const blob=new Blob([JSON.stringify(r)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='zw_records.json'; a.click(); }
+        function importData(e){ const reader=new FileReader(); reader.onload=f=>{ try{const r=JSON.parse(f.target.result); localStorage.setItem('zwRecords',JSON.stringify(r)); renderRecords(); alert('匯入成功！');}catch(e){alert('格式錯誤');} }; reader.readAsText(e.target.files[0]); }
+
+        document.getElementById('ziweiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name=document.getElementById('userName').value||'未命名', genderVal=document.getElementById('gender').value, dateStr=document.getElementById('birthDate').value, hVal=document.getElementById('birthHour').value, isL=document.getElementById('calendarType').value==='lunar';
+            let [y,m,d]=dateStr.split('-').map(Number), solar, lunar;
+            if(isL){ lunar=Lunar.fromYmd(y,m,d); if(hVal==="late-zi")lunar=lunar.next(1); solar=lunar.getSolar(); }
+            else{ solar=Solar.fromYmd(y,m,d); if(hVal==="late-zi")solar=solar.next(1); lunar=solar.getLunar(); }
+            const lM=lunar.getMonth(), lD=lunar.getDay(), yTG=TG.indexOf(lunar.getYearGan()), yDZ=DZ.indexOf(lunar.getYearZhi()), hIdx=(hVal==="late-zi")?0:parseInt(hVal);
+            const mPos=(2+(lM-1)-hIdx+12)%12, mTG=((yTG%5)*2+2+(mPos-2+12)%12)%10;
+            const jNum=(function(tg,dz){const tn=Math.floor(tg/2)+1, dn=(Math.floor(dz/2)%3)+1; let n=tn+dn; if(n>5)n-=5; return {1:3,2:4,3:2,4:6,5:5}[n]||2;})(mTG, mPos);
+            const zwP=(function(d,j){let q=d%j===0?d/j:Math.floor(d/j)+1, r=(q*j)-d, p=(q+1)%12; return r===0?p:(r%2!==0?(p-r+12)%12:(p+r)%12);})(lD, jNum);
+            const tfP=(4-zwP+12)%12, juice=["","","木三局","水二局","金四局","土五局","火六局"][jNum]||"";
+            let mMap=Array.from({length:12},()=>[]), aMap=Array.from({length:12},()=>[]);
+            const shConf=[['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
+            const curSH=shConf[yTG], hFull=document.getElementById('birthHour').options[document.getElementById('birthHour').selectedIndex].text, hNum=hFull.match(/\((.*?)\)/)[1], hTxt=hFull.split('(')[0]+'時';
+            const addM=(p,s)=>{if(s)mMap[(p+12)%12].push({name:s,sh:curSH.indexOf(s)})};
+            ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=>addM(zwP-i,s));
+            ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=>addM(tfP+i,s));
+            const addA=(p,n,t)=>{aMap[(p+12)%12].push({name:n,type:t,sh:curSH.indexOf(n)})};
+            addA(4+lM-1,'左輔','ji'); addA(10-lM+1,'右弼','ji'); addA(10-hIdx,'文昌','ji'); addA(4+hIdx,'文曲','ji');
+            const ky={'甲':[1,7],'乙':[0,8],'丙':[11,9],'丁':[11,9],'戊':[1,7],'己':[0,8],'庚':[1,7],'辛':[6,2],'壬':[3,5],'癸':[3,5]}[lunar.getYearGan()];
+            if(ky){addA(ky[0],'天魁','ji'); addA(ky[1],'天鉞','ji');}
+            addA(11-hIdx,'地空','sha'); addA(11+hIdx,'地劫','sha');
+            const lc=[2,3,5,6,5,6,8,9,11,0][yTG]; addA(lc,'祿存','lma'); addA(lc+1,'擎羊','sha'); addA(lc-1,'陀羅','sha');
+            addA([2,11,8,5][yDZ%4],'天馬','lma');
+            let hs=0, ls=0, zhi=lunar.getYearZhi(); if(['寅','午','戌'].includes(zhi)){hs=1;ls=3;} else if(['申','子','辰'].includes(zhi)){hs=2;ls=10;} else if(['巳','酉','丑'].includes(zhi)){hs=3;ls=10;} else {hs=9;ls=10;}
+            addA(hs+hIdx,'火星','sha'); addA(ls+hIdx,'鈴星','sha');
+            const area=document.getElementById('mainChart'); area.querySelectorAll('.cell').forEach(c=>c.remove());
+            [5,6,7,8,4,-1,-1,9,3,-1,-1,10,2,1,0,11].forEach(dzI=>{
+                if(dzI===-1)return;
+                const cell=document.createElement('div'), shL=['祿','權','科','忌'], shC=['shihua-lu','shihua-quan','shihua-ke','shihua-ji'];
+                cell.className='cell'; let aH='<div class="aux-star-container">', mH='<div class="main-star-container">';
+                aMap[dzI].forEach(s=> aH+=`<div class="aux-star-box ${s.type}"><span class="aux-star-text">${s.name}</span>${s.sh!==-1?`<span class="shihua-tag ${shC[s.sh]}">${shL[s.sh]}</span>`:''}</div>`);
+                mMap[dzI].forEach(s=> mH+=`<div class="main-star-box"><span class="main-star-text">${s.name}</span>${s.sh!==-1?`<span class="shihua-tag ${shC[s.sh]}">${shL[s.sh]}</span>`:''}</div>`);
+                const pIdx=(mPos-dzI+12)%12, cellTG=TG[(mTG+(dzI-mPos+12)%12)%10];
+                cell.innerHTML=`<div class="stars-wrapper">${aH}</div>${mH}</div></div><div class="cell-footer"><span class="dz-text">${cellTG}${DZ[dzI]}</span><span class="palace-tag ${pIdx===0?'is-ming':''}">${PALACES[pIdx]}</span></div>`;
+                area.appendChild(cell);
+            });
+            document.getElementById('centerInfo').innerHTML=`<p class="text-sm font-black">${name}</p><p class="text-[9px] text-indigo-500 font-bold mb-1">${(yTG%2==0?'陽':'陰')+(genderVal=='1'?'男':'女')}</p><div class="w-full text-[8px] space-y-0.5 border-t border-b border-slate-100 py-1"><p>國: ${solar.toYmd()} (${hNum})</p><p>農: ${lunar.getYearInGanZhi()} ${lunar.getMonthInChinese()}${lunar.getDayInChinese()} ${hTxt}</p></div><div class="mt-2 px-3 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100">${juice}</div>`;
+            document.getElementById('chartContainer').classList.remove('hidden');
+        });
     </script>
-    
-    </body>
+</body>
 </html>
