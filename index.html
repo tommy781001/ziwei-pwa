@@ -29,10 +29,9 @@
         .tab-content { display: none; } .tab-content.active { display: block; }
         .nav-item.active { color: #4f46e5; border-top: 3px solid #4f46e5; }
         
-        /* 復刻 v1.9.9 經典版本號樣式 */
-        .v199-footer { @apply mt-6 mb-4 flex flex-col items-center justify-center gap-2; }
-        .v199-text { font-size: 10px; color: #cbd5e1; letter-spacing: 0.05em; }
-        .v199-btn { @apply text-[10px] px-3 py-1 text-slate-400 bg-white border border-slate-100 rounded-md shadow-sm active:bg-slate-50; }
+        /* v1.9.9 經典簡約置中樣式 */
+        .v199-footer { @apply mt-8 mb-6 flex flex-col items-center justify-center w-full; }
+        .v199-text { font-size: 10px; color: #cbd5e1; letter-spacing: 0.05em; cursor: pointer; }
     </style>
 </head>
 <body class="pb-32">
@@ -41,19 +40,19 @@
             <div class="bg-white shadow-md rounded-2xl p-4 mb-4 border-t-4 border-indigo-600">
                 <form id="ziweiForm" class="space-y-4">
                     <div class="grid grid-cols-4 gap-2">
-                        <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-400">姓名</label><input type="text" id="userName" placeholder="姓名" class="w-full border-b p-1 text-sm outline-none"></div>
+                        <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-400">姓名</label><input type="text" id="userName" placeholder="請輸入姓名" class="w-full border-b p-1 text-sm outline-none"></div>
                         <div><label class="block text-[10px] font-bold text-slate-400">性別</label><select id="gender" class="w-full border-b p-1 text-sm"><option value="1">男</option><option value="0">女</option></select></div>
                         <div><label class="block text-[10px] font-bold text-slate-400">曆法</label><select id="calendarType" class="w-full border-b p-1 text-sm"><option value="solar">國曆</option><option value="lunar">農曆</option></select></div>
                     </div>
                     <div class="grid grid-cols-12 gap-2 items-end">
-                        <div class="col-span-7"><label class="block text-[10px] font-bold text-slate-400">出生日期</label><input type="date" id="birthDate" class="w-full border-b p-1 text-sm outline-none"></div>
-                        <div class="col-span-5"><select id="birthHour" class="w-full border-b p-1 text-sm">
+                        <div class="col-span-7"><label class="block text-[10px] font-bold text-slate-400">出生日期與時辰</label><input type="date" id="birthDate" class="w-full border-b p-1 text-sm outline-none bg-slate-50 rounded px-1"></div>
+                        <div class="col-span-5"><select id="birthHour" class="w-full border-b p-1 text-sm bg-slate-50 rounded">
                             <option value="0">子(00-01)</option><option value="1">丑(01-03)</option><option value="2">寅(03-05)</option><option value="3">卯(05-07)</option><option value="4">辰(07-09)</option><option value="5">巳(09-11)</option><option value="6">午(11-13)</option><option value="7">未(13-15)</option><option value="8">申(15-17)</option><option value="9">酉(17-19)</option><option value="10">戌(19-21)</option><option value="11">亥(21-23)</option><option value="late-zi">子(23-00)</option>
                         </select></div>
                     </div>
                     <div class="flex gap-2">
-                        <button type="submit" class="flex-1 bg-indigo-700 text-white font-bold py-3 rounded-xl text-sm active:scale-95">執行排盤</button>
-                        <button type="button" onclick="quickSave()" class="px-4 bg-emerald-500 text-white rounded-xl active:scale-95">💾</button>
+                        <button type="submit" class="flex-1 bg-indigo-700 text-white font-bold py-3 rounded-xl text-sm active:scale-95 shadow-lg shadow-indigo-100">執行排盤</button>
+                        <button type="button" onclick="quickSave()" class="px-4 bg-emerald-500 text-white rounded-xl active:scale-95 shadow-lg shadow-emerald-100">💾</button>
                     </div>
                 </form>
             </div>
@@ -61,8 +60,7 @@
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
 
             <div class="v199-footer">
-                <div class="v199-text">v2.0.1 穩定版 | 介面重整</div>
-                <button onclick="location.reload(true)" class="v199-btn">🔄 檢查更新</button>
+                <div class="v199-text" onclick="location.reload(true)">v2.0.1 穩定版 | 介面重整</div>
             </div>
         </section>
 
@@ -73,8 +71,7 @@
                 <div id="recordList" class="space-y-2"></div>
                 
                 <div class="v199-footer">
-                    <div class="v199-text">v2.0.1 穩定版 | 介面重整</div>
-                    <button onclick="location.reload(true)" class="v199-btn">🔄 檢查更新</button>
+                    <div class="v199-text" onclick="location.reload(true)">v2.0.1 穩定版 | 介面重整</div>
                 </div>
             </div>
         </section>
@@ -86,6 +83,7 @@
     </nav>
 
     <script>
+        // ... (保持原有的 getZodiacData, renderChart, renderRecords 等邏輯不變) ...
         const TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'], DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'], PALACES=["命宮","兄弟","夫妻","子女","財帛","疾厄","遷移","交友","官祿","田宅","福德","父母"];
         const SH_CONF = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
 
