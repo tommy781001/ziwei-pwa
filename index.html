@@ -130,52 +130,40 @@
         }
 
         // --- 3. 渲染層 (UI Rendering) ---
-        function renderChart(name, gender, solar, lunar, hTxt, hNum, result) {
-            const area = document.getElementById('mainChart');
-            area.querySelectorAll('.cell').forEach(c => c.remove());
-            
-            const displayOrder = [5,6,7,8,4,9,3,10,2,1,0,11]; // 排盤 12 宮位順序
-            const shL=['祿','權','科','忌'];
+function renderRecords() {
+    const r = getRecords();
+    const kw = document.getElementById('recordSearch').value.toLowerCase();
+    const list = document.getElementById('recordList');
+    
+    const filtered = r.filter(d => d.name.toLowerCase().includes(kw));
+    
+    if (filtered.length === 0) {
+        list.innerHTML = '<p class="text-center py-10 text-slate-400 text-xs">無相符結果</p>';
+        return;
+    }
 
-            displayOrder.forEach((dzI, index) => {
-                const data = result.chartData[dzI];
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                if(index === 5 || index === 6) { /* 跳過中宮格子邏輯在 CSS Grid 已處理 */ }
-
-                let starsHtml = '<div class="stars-wrapper">';
-                // 將星曜按類型分開，但放在同一個容器內進行垂直排列
-                data.stars.forEach(s => {
-                    starsHtml += `
-                        <div class="star-box">
-                            <span class="star-text ${s.type}">${s.name}</span>
-                            ${s.sh !== -1 ? `<span class="shihua-tag shihua-${s.sh}">${shL[s.sh]}</span>` : ''}
-                        </div>`;
-                });
-                starsHtml += '</div>';
-
-                cell.innerHTML = `
-                    ${starsHtml}
-                    <div class="cell-footer">
-                        <span class="dz-text">${data.tg}${data.dz}</span>
-                        <span class="palace-tag ${data.palaceName==='命宮'?'is-ming':''}">${data.palaceName}</span>
-                    </div>`;
-                
-                // 為了保持 Grid 正確，我們需要依照 Grid 順序插入
-                area.appendChild(cell);
-            });
-
-            document.getElementById('centerInfo').innerHTML = `
-                <p class="text-sm font-black">${name}</p>
-                <p class="text-[9px] text-indigo-500 font-bold mb-1">${(TG[TG.indexOf(lunar.getYearGan())%2]==='甲'?'陽':'陰')+(gender=='1'?'男':'女')}</p>
-                <div class="w-full text-[8px] space-y-0.5 border-t border-b border-slate-100 py-1">
-                    <p>國: ${solar.toYmd()} (${hNum})</p>
-                    <p>農: ${lunar.getYearInGanZhi()} ${lunar.getMonthInChinese()}${lunar.getDayInChinese()} ${hTxt}</p>
+    list.innerHTML = filtered.map((d, i) => `
+        <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm mb-2">
+            <div onclick="loadAndSwitch('${d.date}','${d.name}','${d.gender}','${d.hour}','${d.calType}')" class="flex-1 cursor-pointer">
+                <div class="flex items-center gap-2 mb-1">
+                    <b class="text-slate-700 text-sm">${d.name}</b>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-md ${d.gender === '1' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}">
+                        ${d.gender === '1' ? '男' : '女'}
+                    </span>
                 </div>
-                <div class="mt-2 px-3 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100">${result.juice}</div>
-            `;
-            document.getElementById('chartContainer').classList.remove('hidden');
-        }
+                <p class="text-[10px] text-slate-400 leading-relaxed">
+                    國：${d.sInfo}<br>
+                    農：${d.lInfo}
+                </p>
+            </div>
+            <button onclick="deleteRecord(${r.indexOf(d)})" class="text-slate-300 hover:text-red-400 p-2 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    `).join('');
+}
 
         // --- 4. 基礎設施 (PWA/資料管理) ---
         document.getElementById('ziweiForm').addEventListener('submit', function(e) {
