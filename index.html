@@ -29,9 +29,9 @@
         .tab-content { display: none; } .tab-content.active { display: block; }
         .nav-item.active { color: #4f46e5; border-top: 3px solid #4f46e5; }
         
-        /* v1.9.9 經典簡約置中樣式 */
-        .v199-footer { @apply mt-8 mb-6 flex flex-col items-center justify-center w-full; }
-        .v199-text { font-size: 10px; color: #cbd5e1; letter-spacing: 0.05em; cursor: pointer; }
+        /* 修正後的 v1.9.9 置中樣式 */
+        .v199-footer { width: 100%; text-align: center; margin-top: 2rem; margin-bottom: 1.5rem; }
+        .v199-text { font-size: 10px; color: #cbd5e1; letter-spacing: 0.05em; display: inline-block; cursor: pointer; }
     </style>
 </head>
 <body class="pb-32">
@@ -60,7 +60,7 @@
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
 
             <div class="v199-footer">
-                <div class="v199-text" onclick="location.reload(true)">v2.0.1 穩定版 | 介面重整</div>
+                <span class="v199-text" onclick="location.reload(true)">v2.0.1 穩定版 | 介面重整</span>
             </div>
         </section>
 
@@ -71,7 +71,7 @@
                 <div id="recordList" class="space-y-2"></div>
                 
                 <div class="v199-footer">
-                    <div class="v199-text" onclick="location.reload(true)">v2.0.1 穩定版 | 介面重整</div>
+                    <span class="v199-text" onclick="location.reload(true)">v2.0.1 穩定版 | 介面重整</span>
                 </div>
             </div>
         </section>
@@ -83,7 +83,7 @@
     </nav>
 
     <script>
-        // ... (保持原有的 getZodiacData, renderChart, renderRecords 等邏輯不變) ...
+        // 核心邏輯保持不變
         const TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'], DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'], PALACES=["命宮","兄弟","夫妻","子女","財帛","疾厄","遷移","交友","官祿","田宅","福德","父母"];
         const SH_CONF = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
 
