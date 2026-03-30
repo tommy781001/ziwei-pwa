@@ -36,7 +36,7 @@
             <div class="bg-white shadow-md rounded-2xl p-4 mb-4 border-t-4 border-indigo-600">
                 <form id="ziweiForm" class="space-y-4">
                     <div class="grid grid-cols-4 gap-2">
-                        <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-400">姓名</label><input type="text" id="userName" placeholder="請輸入姓名" class="w-full border-b p-1 text-sm outline-none"></div>
+                        <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-400">姓名</label><input type="text" id="userName" placeholder="姓名" class="w-full border-b p-1 text-sm outline-none"></div>
                         <div><label class="block text-[10px] font-bold text-slate-400">性別</label><select id="gender" class="w-full border-b p-1 text-sm"><option value="1">男</option><option value="0">女</option></select></div>
                         <div><label class="block text-[10px] font-bold text-slate-400">曆法</label><select id="calendarType" class="w-full border-b p-1 text-sm"><option value="solar">國曆</option><option value="lunar">農曆</option></select></div>
                     </div>
@@ -50,19 +50,18 @@
                 </form>
             </div>
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
-            <div class="mt-6 text-center text-[10px] text-slate-300">v2.0.0 穩定重構版</div>
         </section>
 
         <section id="page-data" class="tab-content">
-            <div class="bg-white shadow-md rounded-2xl p-5 border-t-4 border-emerald-500 min-h-[400px]">
+            <div class="bg-white shadow-md rounded-2xl p-4 border-t-4 border-emerald-500 min-h-[400px]">
                 <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold text-slate-700">紀錄管理</h2><div class="flex gap-2"><button onclick="exportData()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯出</button><button onclick="document.getElementById('importFile').click()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯入</button><input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)"></div></div>
-                <input type="text" id="recordSearch" oninput="renderRecords()" placeholder="🔍 搜尋姓名..." class="w-full mb-4 p-2 text-sm bg-slate-50 rounded-lg outline-none border-b border-transparent focus:border-emerald-500 transition-all">
-                <div id="recordList" class="space-y-1.5"></div>
+                <input type="text" id="recordSearch" oninput="renderRecords()" placeholder="🔍 搜尋姓名..." class="w-full mb-4 p-2 text-sm bg-slate-50 rounded-lg outline-none">
+                <div id="recordList" class="space-y-2"></div>
             </div>
         </section>
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-20 pb-4 shadow-lg z-50">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around items-center h-20 pb-4 shadow-lg z-50">
         <button onclick="switchTab('chart')" class="nav-item active flex flex-col items-center justify-center flex-1" id="nav-chart"><span class="text-xl">☯️</span><span class="text-[10px] font-bold">排盤工具</span></button>
         <button onclick="switchTab('data')" class="nav-item flex flex-col items-center justify-center flex-1" id="nav-data"><span class="text-xl">👥</span><span class="text-[10px] font-bold">資料管理</span></button>
     </nav>
@@ -71,7 +70,6 @@
         const TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'], DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'], PALACES=["命宮","兄弟","夫妻","子女","財帛","疾厄","遷移","交友","官祿","田宅","福德","父母"];
         const SH_CONF = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
 
-        // 1. 核心邏輯層 (Star Engine)
         function getZodiacData(params) {
             const { solar, lunar, hIdx, yTG, yDZ } = params;
             const lM = lunar.getMonth(), lD = lunar.getDay();
@@ -79,55 +77,38 @@
             const mPos = (2 + (lM - 1) - hIdx + 12) % 12;
             const mTG = ((yTG % 5) * 2 + 2 + (mPos - 2 + 12) % 12) % 10;
             const jNum = (function(tg, dz){const tn=Math.floor(tg/2)+1, dn=(Math.floor(dz/2)%3)+1; let n=tn+dn; if(n>5)n-=5; return {1:3,2:4,3:2,4:6,5:5}[n]||2;})(mTG, mPos);
-            chartData.forEach((cell, i) => {
-                cell.tg = TG[(mTG + (i - mPos + 12) % 12) % 10];
-                cell.palaceName = PALACES[(mPos - i + 12) % 12];
-            });
-            const addStar = (pos, name, type) => {
-                const sh = SH_CONF[yTG].indexOf(name);
-                chartData[(pos + 12) % 12].stars.push({ name, type, sh });
-            };
+            chartData.forEach((cell, i) => { cell.tg = TG[(mTG + (i - mPos + 12) % 12) % 10]; cell.palaceName = PALACES[(mPos - i + 12) % 12]; });
+            const addStar = (pos, name, type) => { const sh = SH_CONF[yTG].indexOf(name); chartData[(pos + 12) % 12].stars.push({ name, type, sh }); };
             const zwP = (function(d,j){let q=d%j===0?d/j:Math.floor(d/j)+1, r=(q*j)-d, p=(q+1)%12; return r===0?p:(r%2!==0?(p-r+12)%12:(p+r)%12);})(lD, jNum);
             ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=> { if(s) addStar(zwP-i, s, 'star-main'); });
-            const tfP = (4 - zwP + 12) % 12;
-            ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=> { if(s) addStar(tfP+i, s, 'star-main'); });
-            addStar(4+lM-1, '左輔', 'star-aux'); addStar(10-lM+1, '右弼', 'star-aux');
-            addStar(10-hIdx, '文昌', 'star-aux'); addStar(4+hIdx, '文曲', 'star-aux');
+            const tfP = (4 - zwP + 12) % 12; ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=> { if(s) addStar(tfP+i, s, 'star-main'); });
+            addStar(4+lM-1, '左輔', 'star-aux'); addStar(10-lM+1, '右弼', 'star-aux'); addStar(10-hIdx, '文昌', 'star-aux'); addStar(4+hIdx, '文曲', 'star-aux');
             const ky = {'甲':[1,7],'乙':[0,8],'丙':[11,9],'丁':[11,9],'戊':[1,7],'己':[0,8],'庚':[1,7],'辛':[6,2],'壬':[3,5],'癸':[3,5]}[lunar.getYearGan()];
             if(ky){ addStar(ky[0], '天魁', 'star-aux'); addStar(ky[1], '天鉞', 'star-aux'); }
             addStar(11-hIdx, '地空', 'star-sha'); addStar(11+hIdx, '地劫', 'star-sha');
-            const lc = [2,3,5,6,5,6,8,9,11,0][yTG]; 
-            addStar(lc, '祿存', 'star-lma'); addStar(lc+1, '擎羊', 'star-sha'); addStar(lc-1, '陀羅', 'star-sha');
+            const lc = [2,3,5,6,5,6,8,9,11,0][yTG]; addStar(lc, '祿存', 'star-lma'); addStar(lc+1, '擎羊', 'star-sha'); addStar(lc-1, '陀羅', 'star-sha');
             addStar([2,11,8,5][yDZ%4], '天馬', 'star-lma');
             let hs=0, ls=0, zhi=lunar.getYearZhi(); if(['寅','午','戌'].includes(zhi)){hs=1;ls=3;} else if(['申','子','辰'].includes(zhi)){hs=2;ls=10;} else if(['巳','酉','丑'].includes(zhi)){hs=3;ls=10;} else {hs=9;ls=10;}
             addStar(hs+hIdx, '火星', 'star-sha'); addStar(ls+hIdx, '鈴星', 'star-sha');
-
             return { chartData, juice: ["","","木三局","水二局","金四局","土五局","火六局"][jNum], isYang: (yTG%2==0) };
         }
 
-        // 2. 渲染層 (UI Rendering)
         function renderChart(name, gender, solar, lunar, hTxt, hNum, result) {
             const area = document.getElementById('mainChart');
             area.querySelectorAll('.cell').forEach(c => c.remove());
             const displayOrder = [5,6,7,8,4,9,3,10,2,1,0,11]; 
             const shL=['祿','權','科','忌'];
-            displayOrder.forEach((dzI, index) => {
-                const data = result.chartData[dzI];
-                const cell = document.createElement('div');
-                cell.className = 'cell';
+            displayOrder.forEach((dzI) => {
+                const data = result.chartData[dzI], cell = document.createElement('div'); cell.className = 'cell';
                 let starsHtml = '<div class="stars-wrapper">';
-                data.stars.forEach(s => {
-                    starsHtml += `<div class="star-box"><span class="star-text ${s.type}">${s.name}</span>${s.sh !== -1 ? `<span class="shihua-tag shihua-${s.sh}">${shL[s.sh]}</span>` : ''}</div>`;
-                });
-                starsHtml += '</div>';
-                cell.innerHTML = `${starsHtml}<div class="cell-footer"><span class="dz-text">${data.tg}${data.dz}</span><span class="palace-tag ${data.palaceName==='命宮'?'is-ming':''}">${data.palaceName}</span></div>`;
+                data.stars.forEach(s => { starsHtml += `<div class="star-box"><span class="star-text ${s.type}">${s.name}</span>${s.sh !== -1 ? `<span class="shihua-tag shihua-${s.sh}">${shL[s.sh]}</span>` : ''}</div>`; });
+                cell.innerHTML = `${starsHtml}</div><div class="cell-footer"><span class="dz-text">${data.tg}${data.dz}</span><span class="palace-tag ${data.palaceName==='命宮'?'is-ming':''}">${data.palaceName}</span></div>`;
                 area.appendChild(cell);
             });
             document.getElementById('centerInfo').innerHTML = `<p class="text-sm font-black">${name}</p><p class="text-[9px] text-indigo-500 font-bold mb-1">${(result.isYang?'陽':'陰')+(gender=='1'?'男':'女')}</p><div class="w-full text-[8px] space-y-0.5 border-t border-b border-slate-100 py-1"><p>國: ${solar.toYmd()} (${hNum})</p><p>農: ${lunar.getYearInGanZhi()} ${lunar.getMonthInChinese()}${lunar.getDayInChinese()} ${hTxt}</p></div><div class="mt-2 px-3 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100">${result.juice}</div>`;
             document.getElementById('chartContainer').classList.remove('hidden');
         }
 
-        // 3. 資料管理與基礎設施
         function switchTab(t){ document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active')); document.getElementById(`page-${t}`).classList.add('active'); document.getElementById(`nav-${t}`).classList.add('active'); if(t==='data') renderRecords(); }
         function getRecords(){ return JSON.parse(localStorage.getItem('zwRecords')||'[]'); }
         
@@ -136,7 +117,7 @@
             let [y,m,d]=document.getElementById('birthDate').value.split('-').map(Number), solar, lunar;
             if(calType==='lunar'){ lunar=Lunar.fromYmd(y,m,d); solar=lunar.getSolar(); } else { solar=Solar.fromYmd(y,m,d); lunar=solar.getLunar(); }
             const hFull = hs.options[hs.selectedIndex].text, hNum = hFull.match(/\((.*?)\)/)[1], hTxt = hFull.split('(')[0] + '時';
-            r.unshift({ name:document.getElementById('userName').value||'未命名', gender:document.getElementById('gender').value, date:document.getElementById('birthDate').value, hour:hs.value, calType:calType, sInfo: `${solar.toYmd()} (${hNum})`, lInfo: `${lunar.getYearInGanZhi()}年${lunar.getMonthInChinese()}${lunar.getDayInChinese()} ${hTxt}` });
+            r.unshift({ name:document.getElementById('userName').value||'未命名', gender:document.getElementById('gender').value, date:document.getElementById('birthDate').value, hour:hs.value, calType:calType, sInfo: `${solar.toYmd()} (${hNum})`, lInfo: `${lunar.getYearInGanZhi()}${lunar.getMonthInChinese()}${lunar.getDayInChinese()}${hTxt}` });
             localStorage.setItem('zwRecords', JSON.stringify(r)); alert('已存入資料管理');
         }
 
@@ -144,12 +125,15 @@
             const r = getRecords(), kw = document.getElementById('recordSearch').value.toLowerCase(), list = document.getElementById('recordList');
             const filtered = r.filter(d => d.name.toLowerCase().includes(kw));
             list.innerHTML = filtered.length === 0 ? '<p class="text-center py-10 text-slate-400 text-xs">無相符結果</p>' : filtered.map((d, i) => `
-                <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm mb-2">
-                    <div onclick="loadAndSwitch('${d.date}','${d.name}','${d.gender}','${d.hour}','${d.calType}')" class="flex-1 cursor-pointer">
-                        <div class="flex items-center gap-2 mb-1"><b class="text-slate-700 text-sm">${d.name}</b><span class="text-[10px] px-1.5 py-0.5 rounded ${d.gender === '1' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}">${d.gender === '1' ? '男' : '女'}</span></div>
-                        <p class="text-[10px] text-slate-400 leading-normal">國：${d.sInfo}<br>農：${d.lInfo}</p>
+                <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm overflow-hidden">
+                    <div onclick="loadAndSwitch('${d.date}','${d.name}','${d.gender}','${d.hour}','${d.calType}')" class="flex-1 flex items-center min-w-0">
+                        <b class="text-slate-700 text-sm whitespace-nowrap mr-2">${d.name}</b>
+                        <div class="flex items-center text-[10px] text-slate-400 truncate gap-2 border-l pl-2">
+                            <span class="whitespace-nowrap"><span class="text-slate-300">國</span> ${d.sInfo}</span>
+                            <span class="whitespace-nowrap"><span class="text-slate-300">農</span> ${d.lInfo}</span>
+                        </div>
                     </div>
-                    <button onclick="deleteRecord(${r.indexOf(d)})" class="text-slate-200 p-2 ml-2">✕</button>
+                    <button onclick="deleteRecord(${r.indexOf(d)})" class="text-slate-200 p-2 shrink-0">✕</button>
                 </div>`).join('');
         }
 
