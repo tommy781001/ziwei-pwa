@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>紫微斗數 PWA v2.1.0</title>
+    <title>紫微斗數 PWA v2.1.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -14,13 +14,11 @@
         .stars-wrapper { display: flex; flex-direction: row-reverse; height: 82%; overflow: hidden; gap: 3px; }
         .star-box { display: flex; flex-direction: column; align-items: center; width: auto; min-width: 10px; }
         .star-text { writing-mode: vertical-rl; line-height: 1.1; font-weight: bold; }
-        /* 星等樣式區分 */
         .star-main { color: #be123c; font-size: 0.75rem; font-family: 'Noto Serif TC', serif; width: 14px; }
         .star-aux { color: #1e40af; font-size: 0.5rem; }
         .star-sha { color: #ea580c; font-size: 0.5rem; }
         .star-lma { color: #854d0e; font-size: 0.5rem; }
-        .star-b { color: #64748b; font-size: 0.45rem; font-weight: normal; } /* 乙級星：較小且顏色較淡 */
-        
+        .star-b { color: #64748b; font-size: 0.45rem; font-weight: normal; } 
         .shihua-tag { font-size: 0.4rem; color: white; padding: 0px 1px; border-radius: 2px; width: 9px; text-align: center; margin-top: 1px; }
         .shihua-0 { background: #be123c; } .shihua-1 { background: #15803d; } .shihua-2 { background: #1d4ed8; } .shihua-3 { background: #111827; }
         .cell-footer { position: absolute; bottom: 2px; left: 2px; right: 2px; display: flex; justify-content: space-between; align-items: flex-end; }
@@ -57,7 +55,7 @@
                 </form>
             </div>
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
-            <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.0 穩定版 | 程式更新</span></div>
+            <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.2 穩定版 | 代碼結構正規化</span></div>
         </section>
 
         <section id="page-data" class="tab-content">
@@ -65,7 +63,7 @@
                 <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold text-slate-700">紀錄管理</h2><div class="flex gap-2"><button onclick="exportData()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯出</button><button onclick="document.getElementById('importFile').click()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯入</button><input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)"></div></div>
                 <input type="text" id="recordSearch" oninput="renderRecords()" placeholder="🔍 搜尋姓名..." class="w-full mb-4 p-2 text-sm bg-slate-50 rounded-lg outline-none">
                 <div id="recordList" class="space-y-2"></div>
-                <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.0 穩定版 | 程式更新</span></div>
+                <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.2 穩定版 | 代碼結構正規化</span></div>
             </div>
         </section>
     </main>
@@ -93,12 +91,10 @@
                 chartData[(pos + 12) % 12].stars.push({ name, type, sh }); 
             };
 
-            // 甲級主星
             const zwP = (function(d,j){let q=d%j===0?d/j:Math.floor(d/j)+1, r=(q*j)-d, p=(q+1)%12; return r===0?p:(r%2!==0?(p-r+12)%12:(p+r)%12);})(lD, jNum);
             ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=> { if(s) addStar(zwP-i, s, 'star-main'); });
             const tfP = (4 - zwP + 12) % 12; ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=> { if(s) addStar(tfP+i, s, 'star-main'); });
 
-            // 六吉六煞與輔星
             addStar(4+lM-1, '左輔', 'star-aux'); addStar(10-lM+1, '右弼', 'star-aux'); 
             addStar(10-hIdx, '文昌', 'star-aux'); addStar(4+hIdx, '文曲', 'star-aux');
             const ky = {'甲':[1,7],'乙':[0,8],'丙':[11,9],'丁':[11,9],'戊':[1,7],'己':[0,8],'庚':[1,7],'辛':[6,2],'壬':[3,5],'癸':[3,5]}[lunar.getYearGan()];
@@ -110,37 +106,21 @@
             if(['寅','午','戌'].includes(zhi)){hs=1;ls=3;} else if(['申','子','辰'].includes(zhi)){hs=2;ls=10;} else if(['巳','酉','丑'].includes(zhi)){hs=3;ls=10;} else {hs=9;ls=10;}
             addStar(hs+hIdx, '火星', 'star-sha'); addStar(ls+hIdx, '鈴星', 'star-sha');
 
-            // --- 乙級輔星開始 ---
-            // 1. 紅鸞、天喜 (依年支)
-            const hongPos = (3 - yDZ + 12) % 12; 
-            addStar(hongPos, '紅鸞', 'star-b');
-            addStar((hongPos + 6) % 12, '天喜', 'star-b');
+            const hongPos = (3 - yDZ + 12) % 12; addStar(hongPos, '紅鸞', 'star-b'); addStar((hongPos + 6) % 12, '天喜', 'star-b');
+            addStar((9 + lM - 1) % 12, '天刑', 'star-b'); addStar((1 + lM - 1) % 12, '天姚', 'star-b');
 
-            // 2. 天刑、天姚 (依生月)
-            addStar((9 + lM - 1) % 12, '天刑', 'star-b');
-            addStar((1 + lM - 1) % 12, '天姚', 'star-b');
-
-            // 3. 解神 (依生月)
-            const jieshen = [申=8, 申=8, 戌=10, 戌=10, 子=0, 子=0, 寅=2, 寅=2, 辰=4, 辰=4, 午=6, 午=6][lM-1];
+            // 3. 解神 (雙月同宮版：正二申(8)、三四戌(10)、五六子(0)、七八寅(2)、九十辰(4)、十一十二午(6))
+            const jieshen = [8, 8, 10, 10, 0, 0, 2, 2, 4, 4, 6, 6][lM-1];
             addStar(jieshen, '解神', 'star-b');
 
-            // 4. 天巫 (依生月)
-            const tianwu = [巳=5, 申=8, 亥=11, 寅=2, 巳=5, 申=8, 亥=11, 寅=2, 巳=5, 申=8, 亥=11, 寅=2][lM-1];
-            addStar(tianwu, '天巫', 'star-b');
-
-            // 5. 天月 (依生月)
-            const tianyue = [戌=10, 巳=5, 辰=4, 寅=2, 未=7, 卯=3, 亥=11, 未=7, 寅=2, 午=6, 戌=10, 寅=2][lM-1];
-            addStar(tianyue, '天月', 'star-b');
-
-            // 6. 陰煞 (依生月)
-            const yinsha = [寅=2, 子=0, 戌=10, 申=8, 午=6, 辰=4, 寅=2, 子=0, 戌=10, 申=8, 午=6, 辰=4][lM-1];
-            addStar(yinsha, '陰煞', 'star-b');
-            // --- 乙級輔星結束 ---
+            // 4. 天巫、天月、陰煞 (正統查表法)
+            const tianwu = [5, 8, 11, 2, 5, 8, 11, 2, 5, 8, 11, 2][lM-1]; addStar(tianwu, '天巫', 'star-b');
+            const tianyue = [10, 5, 4, 2, 7, 3, 11, 7, 2, 6, 10, 2][lM-1]; addStar(tianyue, '天月', 'star-b');
+            const yinsha = [2, 0, 10, 8, 6, 4, 2, 0, 10, 8, 6, 4][lM-1]; addStar(yinsha, '陰煞', 'star-b');
 
             return { chartData, juice: ["","","木三局","水二局","金四局","土五局","火六局"][jNum], isYang: (yTG%2==0) };
         }
 
-        // --- 以下 UI 與資料處理 Function 保持不變 ---
         function renderChart(name, gender, solar, lunar, hTxt, hNum, result) {
             const area = document.getElementById('mainChart');
             area.querySelectorAll('.cell').forEach(c => c.remove());
