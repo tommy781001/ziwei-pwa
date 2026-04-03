@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>紫微斗數 PWA v2.0.1</title>
+    <title>紫微斗數 PWA v2.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -14,11 +14,13 @@
         .stars-wrapper { display: flex; flex-direction: row-reverse; height: 82%; overflow: hidden; gap: 3px; }
         .star-box { display: flex; flex-direction: column; align-items: center; width: auto; min-width: 10px; }
         .star-text { writing-mode: vertical-rl; line-height: 1.1; font-weight: bold; }
+        /* 星等樣式區分 */
         .star-main { color: #be123c; font-size: 0.75rem; font-family: 'Noto Serif TC', serif; width: 14px; }
         .star-aux { color: #1e40af; font-size: 0.5rem; }
         .star-sha { color: #ea580c; font-size: 0.5rem; }
         .star-lma { color: #854d0e; font-size: 0.5rem; }
-        .star-b { color: #64748b; font-size: 0.45rem; font-weight: normal; } 
+        .star-b { color: #64748b; font-size: 0.45rem; font-weight: normal; } /* 乙級星：較小且顏色較淡 */
+        
         .shihua-tag { font-size: 0.4rem; color: white; padding: 0px 1px; border-radius: 2px; width: 9px; text-align: center; margin-top: 1px; }
         .shihua-0 { background: #be123c; } .shihua-1 { background: #15803d; } .shihua-2 { background: #1d4ed8; } .shihua-3 { background: #111827; }
         .cell-footer { position: absolute; bottom: 2px; left: 2px; right: 2px; display: flex; justify-content: space-between; align-items: flex-end; }
@@ -28,8 +30,6 @@
         .center-box { grid-column: 2 / 4; grid-row: 2 / 4; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; }
         .tab-content { display: none; } .tab-content.active { display: block; }
         .nav-item.active { color: #4f46e5; border-top: 3px solid #4f46e5; }
-        
-        /* 修正後的 v1.9.9 置中樣式 */
         .v199-footer { width: 100%; text-align: center; margin-top: 2rem; margin-bottom: 1.5rem; }
         .v199-text { font-size: 10px; color: #cbd5e1; letter-spacing: 0.05em; display: inline-block; cursor: pointer; }
     </style>
@@ -56,12 +56,8 @@
                     </div>
                 </form>
             </div>
-            
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
-
-            <div class="v199-footer">
-                <span class="v199-text" onclick="location.reload(true)">v2.0.1 穩定版 | 介面重整</span>
-            </div>
+            <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.0 穩定版 | 加入乙級輔星</span></div>
         </section>
 
         <section id="page-data" class="tab-content">
@@ -69,10 +65,7 @@
                 <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold text-slate-700">紀錄管理</h2><div class="flex gap-2"><button onclick="exportData()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯出</button><button onclick="document.getElementById('importFile').click()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯入</button><input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)"></div></div>
                 <input type="text" id="recordSearch" oninput="renderRecords()" placeholder="🔍 搜尋姓名..." class="w-full mb-4 p-2 text-sm bg-slate-50 rounded-lg outline-none">
                 <div id="recordList" class="space-y-2"></div>
-                
-                <div class="v199-footer">
-                    <span class="v199-text" onclick="location.reload(true)">v2.0.1 穩定版 | 介面重整</span>
-                </div>
+                <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.0 穩定版 | 加入乙級輔星</span></div>
             </div>
         </section>
     </main>
@@ -83,7 +76,6 @@
     </nav>
 
     <script>
-        // 核心邏輯保持不變
         const TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'], DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'], PALACES=["命宮","兄弟","夫妻","子女","財帛","疾厄","遷移","交友","官祿","田宅","福德","父母"];
         const SH_CONF = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
 
@@ -95,21 +87,60 @@
             const mTG = ((yTG % 5) * 2 + 2 + (mPos - 2 + 12) % 12) % 10;
             const jNum = (function(tg, dz){const tn=Math.floor(tg/2)+1, dn=(Math.floor(dz/2)%3)+1; let n=tn+dn; if(n>5)n-=5; return {1:3,2:4,3:2,4:6,5:5}[n]||2;})(mTG, mPos);
             chartData.forEach((cell, i) => { cell.tg = TG[(mTG + (i - mPos + 12) % 12) % 10]; cell.palaceName = PALACES[(mPos - i + 12) % 12]; });
-            const addStar = (pos, name, type) => { const sh = SH_CONF[yTG].indexOf(name); chartData[(pos + 12) % 12].stars.push({ name, type, sh }); };
+            
+            const addStar = (pos, name, type) => { 
+                const sh = (type === 'star-main') ? SH_CONF[yTG].indexOf(name) : -1;
+                chartData[(pos + 12) % 12].stars.push({ name, type, sh }); 
+            };
+
+            // 甲級主星
             const zwP = (function(d,j){let q=d%j===0?d/j:Math.floor(d/j)+1, r=(q*j)-d, p=(q+1)%12; return r===0?p:(r%2!==0?(p-r+12)%12:(p+r)%12);})(lD, jNum);
             ["紫微","天機","","太陽","武曲","天同","","","廉貞"].forEach((s,i)=> { if(s) addStar(zwP-i, s, 'star-main'); });
             const tfP = (4 - zwP + 12) % 12; ["天府","太陰","貪狼","巨門","天相","天梁","七殺","","","","破軍"].forEach((s,i)=> { if(s) addStar(tfP+i, s, 'star-main'); });
-            addStar(4+lM-1, '左輔', 'star-aux'); addStar(10-lM+1, '右弼', 'star-aux'); addStar(10-hIdx, '文昌', 'star-aux'); addStar(4+hIdx, '文曲', 'star-aux');
+
+            // 六吉六煞與輔星
+            addStar(4+lM-1, '左輔', 'star-aux'); addStar(10-lM+1, '右弼', 'star-aux'); 
+            addStar(10-hIdx, '文昌', 'star-aux'); addStar(4+hIdx, '文曲', 'star-aux');
             const ky = {'甲':[1,7],'乙':[0,8],'丙':[11,9],'丁':[11,9],'戊':[1,7],'己':[0,8],'庚':[1,7],'辛':[6,2],'壬':[3,5],'癸':[3,5]}[lunar.getYearGan()];
             if(ky){ addStar(ky[0], '天魁', 'star-aux'); addStar(ky[1], '天鉞', 'star-aux'); }
             addStar(11-hIdx, '地空', 'star-sha'); addStar(11+hIdx, '地劫', 'star-sha');
             const lc = [2,3,5,6,5,6,8,9,11,0][yTG]; addStar(lc, '祿存', 'star-lma'); addStar(lc+1, '擎羊', 'star-sha'); addStar(lc-1, '陀羅', 'star-sha');
             addStar([2,11,8,5][yDZ%4], '天馬', 'star-lma');
-            let hs=0, ls=0, zhi=lunar.getYearZhi(); if(['寅','午','戌'].includes(zhi)){hs=1;ls=3;} else if(['申','子','辰'].includes(zhi)){hs=2;ls=10;} else if(['巳','酉','丑'].includes(zhi)){hs=3;ls=10;} else {hs=9;ls=10;}
+            let hs=0, ls=0, zhi=lunar.getYearZhi(); 
+            if(['寅','午','戌'].includes(zhi)){hs=1;ls=3;} else if(['申','子','辰'].includes(zhi)){hs=2;ls=10;} else if(['巳','酉','丑'].includes(zhi)){hs=3;ls=10;} else {hs=9;ls=10;}
             addStar(hs+hIdx, '火星', 'star-sha'); addStar(ls+hIdx, '鈴星', 'star-sha');
+
+            // --- 乙級輔星開始 ---
+            // 1. 紅鸞、天喜 (依年支)
+            const hongPos = (3 - yDZ + 12) % 12; 
+            addStar(hongPos, '紅鸞', 'star-b');
+            addStar((hongPos + 6) % 12, '天喜', 'star-b');
+
+            // 2. 天刑、天姚 (依生月)
+            addStar((9 + lM - 1) % 12, '天刑', 'star-b');
+            addStar((1 + lM - 1) % 12, '天姚', 'star-b');
+
+            // 3. 解神 (依生月)
+            const jieshen = [申=8, 酉=9, 戌=10, 亥=11, 子=0, 丑=1, 寅=2, 卯=3, 辰=4, 巳=5, 午=6, 未=7][lM-1];
+            addStar(jieshen, '解神', 'star-b');
+
+            // 4. 天巫 (依生月)
+            const tianwu = [巳=5, 申=8, 亥=11, 寅=2, 巳=5, 申=8, 亥=11, 寅=2, 巳=5, 申=8, 亥=11, 寅=2][lM-1];
+            addStar(tianwu, '天巫', 'star-b');
+
+            // 5. 天月 (依生月)
+            const tianyue = [戌=10, 巳=5, 辰=4, 寅=2, 未=7, 卯=3, 亥=11, 未=7, 寅=2, 午=6, 戌=10, 寅=2][lM-1];
+            addStar(tianyue, '天月', 'star-b');
+
+            // 6. 陰煞 (依生月)
+            const yinsha = [寅=2, 子=0, 戌=10, 申=8, 午=6, 辰=4, 寅=2, 子=0, 戌=10, 申=8, 午=6, 辰=4][lM-1];
+            addStar(yinsha, '陰煞', 'star-b');
+            // --- 乙級輔星結束 ---
+
             return { chartData, juice: ["","","木三局","水二局","金四局","土五局","火六局"][jNum], isYang: (yTG%2==0) };
         }
 
+        // --- 以下 UI 與資料處理 Function 保持不變 ---
         function renderChart(name, gender, solar, lunar, hTxt, hNum, result) {
             const area = document.getElementById('mainChart');
             area.querySelectorAll('.cell').forEach(c => c.remove());
@@ -128,16 +159,15 @@
 
         function switchTab(t){ document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active')); document.getElementById(`page-${t}`).classList.add('active'); document.getElementById(`nav-${t}`).classList.add('active'); if(t==='data') renderRecords(); }
         function getRecords(){ return JSON.parse(localStorage.getItem('zwRecords')||'[]'); }
-        
         function quickSave(){
             const r=getRecords(), hs=document.getElementById('birthHour'), calType=document.getElementById('calendarType').value;
             let [y,m,d]=document.getElementById('birthDate').value.split('-').map(Number), solar, lunar;
+            if(!y) return alert('請選擇日期');
             if(calType==='lunar'){ lunar=Lunar.fromYmd(y,m,d); solar=lunar.getSolar(); } else { solar=Solar.fromYmd(y,m,d); lunar=solar.getLunar(); }
             const hFull = hs.options[hs.selectedIndex].text, hNum = hFull.match(/\((.*?)\)/)[1], hTxt = hFull.split('(')[0] + '時';
             r.unshift({ name:document.getElementById('userName').value||'未命名', gender:document.getElementById('gender').value, date:document.getElementById('birthDate').value, hour:hs.value, calType:calType, sInfo: `${solar.toYmd()} (${hNum})`, lInfo: `${lunar.getYearInGanZhi()}${lunar.getMonthInChinese()}${lunar.getDayInChinese()}${hTxt}` });
             localStorage.setItem('zwRecords', JSON.stringify(r)); alert('已存入資料管理');
         }
-
         function renderRecords() {
             const r = getRecords(), kw = document.getElementById('recordSearch').value.toLowerCase(), list = document.getElementById('recordList');
             const filtered = r.filter(d => d.name.toLowerCase().includes(kw));
@@ -157,12 +187,10 @@
                     <button onclick="deleteRecord(${r.indexOf(d)})" class="text-slate-200 p-2 ml-2 shrink-0">✕</button>
                 </div>`).join('');
         }
-
         function loadAndSwitch(date,name,gender,hour,calType){ document.getElementById('userName').value=name; document.getElementById('gender').value=gender; document.getElementById('calendarType').value=calType||'solar'; document.getElementById('birthDate').value=date; document.getElementById('birthHour').value=hour; switchTab('chart'); document.getElementById('ziweiForm').dispatchEvent(new Event('submit')); }
         function deleteRecord(i){ if(confirm('刪除紀錄？')){ const r=getRecords(); r.splice(i,1); localStorage.setItem('zwRecords',JSON.stringify(r)); renderRecords(); } }
         function exportData(){ const blob=new Blob([localStorage.getItem('zwRecords')],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='zw_backup.json'; a.click(); }
         function importData(e){ const reader=new FileReader(); reader.onload=f=>{ localStorage.setItem('zwRecords',f.target.result); renderRecords(); alert('匯入成功'); }; reader.readAsText(e.target.files[0]); }
-
         document.getElementById('ziweiForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const name=document.getElementById('userName').value||'未命名', gender=document.getElementById('gender').value, dateStr=document.getElementById('birthDate').value, hVal=document.getElementById('birthHour').value, isL=document.getElementById('calendarType').value==='lunar';
