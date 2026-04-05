@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>紫微斗數 PWA v2.1.3</title>
+    <title>紫微斗數 PWA v2.1.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -61,7 +61,7 @@
                 </form>
             </div>
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
-            <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.3 | 找回消失的四化</span></div>
+            <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.4 | 版本更新</span></div>
         </section>
 
         <section id="page-data" class="tab-content">
@@ -69,7 +69,7 @@
                 <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold text-slate-700">紀錄管理</h2><div class="flex gap-2"><button onclick="exportData()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯出</button><button onclick="document.getElementById('importFile').click()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯入</button><input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)"></div></div>
                 <input type="text" id="recordSearch" oninput="renderRecords()" placeholder="🔍 搜尋姓名..." class="w-full mb-4 p-2 text-sm bg-slate-50 rounded-lg outline-none">
                 <div id="recordList" class="space-y-2"></div>
-                <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.3 | 找回消失的四化</span></div>
+                <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.4 | 版本更新</span></div>
             </div>
         </section>
     </main>
@@ -81,7 +81,7 @@
 
     <script>
         const TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'], DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'], PALACES=["命宮","兄弟","夫妻","子女","財帛","疾厄","遷移","交友","官祿","田宅","福德","父母"];
-        const SH_CONF = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','順門','天機','貪狼']];
+        const SH_CONF = [['廉貞','破軍','武曲','太陽'],['天機','天梁','紫微','太陰'],['天同','天機','文昌','廉貞'],['太陰','天同','天機','巨門'],['貪狼','太陰','右弼','天機'],['武曲','貪狼','天梁','文曲'],['太陽','武曲','太陰','天同'],['巨門','太陽','文曲','文昌'],['天梁','紫微','左輔','武曲'],['破軍','巨門','天機','貪狼']];
 
         function getZodiacData(params) {
             const { solar, lunar, hIdx, yTG, yDZ } = params;
@@ -131,10 +131,15 @@
                 const data = result.chartData[dzI], cell = document.createElement('div'); cell.className = 'cell';
                 let starsHtml = '<div class="stars-wrapper">';
                 data.stars.forEach(s => { 
-                    // 關鍵修正：確保 sh 標籤被渲染
+                    // 檢查該星曜是否有四化 (sh 不等於 -1)
+                    let shTag = '';
+                    if (s.sh !== -1) {
+                        shTag = `<span class="shihua-tag shihua-${s.sh}">${shL[s.sh]}</span>`;
+                    }
+                    
                     starsHtml += `<div class="star-box">
                         <span class="star-text ${s.type}">${s.name}</span>
-                        ${s.sh !== -1 ? `<span class="shihua-tag shihua-${s.sh}">${shL[s.sh]}</span>` : ''}
+                        ${shTag}
                     </div>`; 
                 });
                 cell.innerHTML = `${starsHtml}</div><div class="cell-footer"><span class="dz-text">${data.tg}${data.dz}</span><span class="palace-tag ${data.palaceName==='命宮'?'is-ming':''}">${data.palaceName}</span></div>`;
