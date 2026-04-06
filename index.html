@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>紫微斗數 PWA v2.1.4</title>
+    <title>紫微斗數 PWA v2.1.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <style>
@@ -61,7 +61,7 @@
                 </form>
             </div>
             <div id="chartContainer" class="hidden"><div class="bg-slate-900 p-1 rounded-xl shadow-2xl"><div class="chart-container" id="mainChart"><div class="center-box" id="centerInfo"></div></div></div></div>
-            <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.4 | 版本更新</span></div>
+            <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.5 | 版本更新</span></div>
         </section>
 
         <section id="page-data" class="tab-content">
@@ -69,7 +69,7 @@
                 <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold text-slate-700">紀錄管理</h2><div class="flex gap-2"><button onclick="exportData()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯出</button><button onclick="document.getElementById('importFile').click()" class="text-[10px] bg-slate-50 px-2 py-1 rounded border">匯入</button><input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)"></div></div>
                 <input type="text" id="recordSearch" oninput="renderRecords()" placeholder="🔍 搜尋姓名..." class="w-full mb-4 p-2 text-sm bg-slate-50 rounded-lg outline-none">
                 <div id="recordList" class="space-y-2"></div>
-                <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.4 | 版本更新</span></div>
+                <div class="v199-footer"><span class="v199-text" onclick="location.reload(true)">v2.1.5 | 版本更新</span></div>
             </div>
         </section>
     </main>
@@ -93,7 +93,7 @@
             chartData.forEach((cell, i) => { cell.tg = TG[(mTG + (i - mPos + 12) % 12) % 10]; cell.palaceName = PALACES[(mPos - i + 12) % 12]; });
             
             const addStar = (pos, name, type) => { 
-                const sh = (type === 'star-main') ? SH_CONF[yTG].indexOf(name) : -1;
+                const sh = /*(type === 'star-main') ? */SH_CONF[yTG].indexOf(name) /*: -1*/;
                 chartData[(pos + 12) % 12].stars.push({ name, type, sh }); 
             };
 
